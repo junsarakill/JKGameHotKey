@@ -23,8 +23,8 @@ keyMap := {
     ,e : [551, 677]
     ,r : [739, 677]
     ,t : [932, 677]
-    ,Y : [1123, 677]
-    ,A : [1053, 479]
+    ,y : [1123, 677]
+    ,a : [1053, 479]
     ,p : [858, 336]
     ,o : [553, 336]
     ,z : [744, 488]     
@@ -52,7 +52,7 @@ for key, value in keyMap.OwnProps() {
 
 
 ; 돌핀 포커스 확인
-SetTimer CheckFocus, 1000 ; 1 초 마다 체크
+SetTimer CheckFocus, 30000 ; 1 초 마다 체크
 
 CheckFocus() 
 {
@@ -78,22 +78,34 @@ CheckFocus()
 ; 해당 키 좌표 가져오기
 GetKeyPos(&valueAry, key)
 {
+    CheckFocus()
+
     ; $ 잘라내기
     key := StrReplace(key, "$")
-    key := StrReplace(key, " up")       
+    key := StrReplace(key, " up")    
     
-    if(!canInput)
+    if(!canInput or !keyMap.HasOwnProp(key))
     {   
+        if(!GetKeyState(key, "P"))
+        {
+            return false
+        }                                               
+
         ToolTip(key)
-        Send("{" key "}")
-        Sleep(50)
-        return canInput
+        if(GetKeyState("Alt", "P"))
+            return false
+        SendInput("{" key "}")
+        Sleep(100)
+        return false
     }
 
     ; 해당 키 좌표 가져오기
     valueAry := keyMap.GetOwnPropDesc(key).Value
 
-    return canInput
+    if(valueAry.Length < 2)
+        return false
+
+    return true
 }
 
 ; 클릭 : 입력 가능 시만
@@ -105,7 +117,7 @@ ClickPos(hotKey)
 
     ; 해당 좌표 클릭
     MouseClick('L',valueAry[1],valueAry[2], 1,2,'D')
-    return Sleep(50)
+    return
 }
 
 ReleaseBtn(hotKey)
@@ -115,7 +127,8 @@ ReleaseBtn(hotKey)
         return
 
     ; 클릭 해제
-    return MouseClick('L',valueAry[1],valueAry[2], 1,2,'U')
+    MouseClick('L',valueAry[1],valueAry[2], 1,2,'U')
+    return                          
 }
 
 #HotIf 
