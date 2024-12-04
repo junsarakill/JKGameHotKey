@@ -1,5 +1,7 @@
 ﻿#Requires AutoHotkey v2.0
 
+; 시작 실행 딜레이
+waitStart := false
 
 ; 입력 가능 여부
 canInput := false
@@ -50,6 +52,13 @@ for key, value in keyMap.OwnProps() {
 
 ; MsgBox("생성된 핫키들 : `n" kl)
 
+SetTimer WaitStartProgram, 5000
+
+WaitStartProgram()
+{
+    global waitStart
+    waitStart := true
+}
 
 ; 돌핀 포커스 확인
 SetTimer CheckFocus, 30000 ; 1 초 마다 체크
@@ -61,7 +70,7 @@ CheckFocus()
     canInput := WinActive(gameName) ? true : false
     ToolTip "canInput : " (canInput ? "true" : "false")
 
-    if(!ProcessExist(processName))
+    if(waitStart and !ProcessExist(processName))
     {
         ToolTip processName "이 종료됨. 핫 키 종료"
         Sleep 1000
@@ -74,7 +83,9 @@ CheckFocus()
 ; 종료
 ] & Esc::ExitApp
 
-#HotIf canInput         
+[ & Esc::WaitStartProgram                   
+
+#HotIf canInput   
 ; 해당 키 좌표 가져오기
 GetKeyPos(&valueAry, key)
 {
