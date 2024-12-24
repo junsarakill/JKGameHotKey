@@ -62,9 +62,11 @@ processHandle := 0
 ; 키 맵
 keyMap := {
     Tab : [100, 35]
-    ,z : [862,540]
-    ,x : [567, 540]
+    ,z : [862,569]
+    ,x : [567, 569]
     ,t : [1303,115]
+    ,r : [1234,704]
+    ,Capslock : [1212,43]
 }
 
 ; 오버레이 정보 배열               
@@ -96,6 +98,12 @@ infoMap := [
 ; 키 맵에 있는 거 오버레이 배열에 추가
 for key, value in keyMap.OwnProps()
 {
+    if(key == "Capslock")
+    {
+        infoMap.Push(OverlayInfo(value[1], value[2], "cl"))    
+        continue
+    }
+    
     infoMap.Push(OverlayInfo(value[1], value[2], key))
 }
 
