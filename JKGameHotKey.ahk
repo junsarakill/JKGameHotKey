@@ -29,9 +29,26 @@ class KeyData
         this.type := type
         this.description := desc
     }
-    
 }
 
+class HotKeyInfo
+{
+    hotKeyMap := Map()
+
+    overlayMap := Map()
+
+    ; 핫키 초기화
+    ClearHotKey()
+    {
+
+    }
+
+    ; 핫키 맵 추가
+    AddHotKeyMap(&keyData)
+    {
+        this.hotKeyMap.Set(keyData["name"], keyData)
+    }
+}
 
 class Vector2d {
     x := 0
@@ -76,8 +93,19 @@ class OverlayInfo
 }
 
 ; 가상키 영역
-; # 1. 게임명 : 파일명 시트 정보 가져오기 | LoadSheetData => sheetNameMap
-; 
+/* 스크립트 진행 구조
+1. 게임명 : 파일명 시트 정보 가져오기 | LoadSheetData => sheetNameMap
+2. 포커스 체크 딜리게이트 등록 | BindFocusChange -> ShellHook
+-> 포커스 체크 | CheckFocus
+-> 현재 매핑 게임명과 같은지 검사
+-> 다르면 키매핑 제거 | RemoveHotKey
+-> 다르면 시트에 해당 게임명 있는지 검사 | FindGameName
+-> 있으면 해당 게임 키매핑 생성 | CreateHotKey
+
+
+-> 없으면 전체 프로세스에 목표 게임 존재 체크
+-> 없으면 스크립트 종료
+*/
 
 
 ; 게임명 : 파일명 시트 경로
@@ -87,6 +115,116 @@ keySheetName := "JK_AHK_SheetNameKey.csv"
 ; 게임명 : 파일명 정보 구조체 | 배열 { 맵[헤더] : 값 }
 sheetNameTable := LoadSheetData(sheetFolder . keySheetName)
 
+; 현재 목표 게임명
+curTargetTitle := ""
+
+; 가상키 데이터 배열
+hkInfo := HotKeyInfo()
+
+; 프로그램 실행 단
+BeginPlay()
+
+BeginPlay()
+{
+    ; 포커스 체크 딜리게이트 등록
+    BindFocusChange()
+}
+
+BindFocusChange()
+{
+    ; 스크립트 핸들을 등록합니다.
+    DllCall("RegisterShellHookWindow", "ptr", A_ScriptHwnd) 
+
+    ; SHELLHOOK 메시지를 수신합니다.
+    OnMessage(DllCall("RegisterWindowMessage", "str", "SHELLHOOK"), ShellHook) 
+}
+
+; 포커스 변경됨
+ShellHook(wParam, lParam, *) 
+{
+    ; HSHELL_RUDEAPPACTIVATED || HSHELL_WINDOWACTIVATED
+    if (wParam = 0x8004 || wParam = 4) 
+    { 
+        ; lParam이 0이면 현재 활성 창의 핸들을 가져옵니다.
+        hwnd := lParam || WinExist("A") 
+
+        curTitle := WinGetTitle(hwnd)
+        ToolTip curTitle
+        ; 프로그램 체크
+        CheckFocus(&curTitle)
+    }
+}
+
+; 타겟 프로그램 포커스 확인
+CheckFocus(&curTitle) 
+{
+    global curTargetTitle
+    global hkInfo
+
+    ; 현재 목표 게임인지 체크
+    if(curTargetTitle = curTitle)
+        return
+
+    ; @@ 변경되었으니 키 매핑 제거
+    RemoveHotKey()
+    ; 시트에 있는 게임인지 체크
+    if(FindGameName(&curTitle))
+    {
+        ToolTip("시트에 있음 키매핑 생성: " curTitle)
+        
+        curTargetTitle := curTitle
+
+        ; 키 매핑 시트 데이터 가져오기
+        keyData := LoadKeyData(&curTitle)
+
+
+        ; 가상키 생성
+        CreateHotKey(&curTitle, &keyData, &hkInfo)
+
+        processHandle := WinActive(curTitle)
+        ; 오버레이 생성
+        CreateOverlay(&processHandle, &keyData, &hkInfo)
+    }
+    else
+    {
+        ; 전체 프로세스에 시트 게임이 하나도 없는지 체크
+
+        ; 없으면 스크립트 종료
+    }
+
+    ; global canInput
+    ; global infoMap
+    ; global processHandle
+    ; ; 찾을 프로그램 이름
+    ; processHandle := WinActive(gameName)
+    ; canInput := processHandle ? true : false
+    ; ; ToolTip "" (canInput ? "it" : "if")
+
+    ; ; 입력 가능     
+    ; if(canInput)
+    ; {
+    ;     ; 오버레이 활성화
+    ;     ActiveOverlay(&processHandle)
+    ; }
+    ; else
+    ; {
+    ;     for oneInfo in infoMap
+    ;     {
+    ;         oneInfo.SetActive(false)
+    ;     }
+    ; }
+
+
+    ; ; 프로그램 없으면 종료
+    ; if(waitStart and !ProcessExist(processName))
+    ; {
+    ;     ToolTip processName "이 종료됨. 핫 키 종료"
+    ;     Sleep 1000
+    ;     ExitApp
+    ; }
+}
+
+
 ; 시트 데이터 구조체로 변환하기
 LoadSheetData(csvFilePath)
 {
@@ -94,7 +232,7 @@ LoadSheetData(csvFilePath)
     csvData := FileRead(csvFilePath)
     
     ; 행 분리
-    rows := StrSplit(csvData, "`n")
+    rows := StrSplit(csvData, "`r`n")
 
     ; 헤더 가져오기
     headers := StrSplit(rows[1], ",")
@@ -109,6 +247,13 @@ LoadSheetData(csvFilePath)
         rowData := StrSplit(row, ",")
         ; 행 데이터 구조체화
         field := Map()
+        
+        ; FIXME 인코딩 문제
+        ; MsgBox(headers.Length " " rowData.Length " " rowData[1])
+        ; if(Trim(rowData[1]) = "K 기록소")
+        ; {
+        ;     MsgBox("Asd")
+        ; }
         for index, header in headers
         {
             field[header] := rowData[index]
@@ -120,16 +265,14 @@ LoadSheetData(csvFilePath)
     return data
 }
 
-; MsgBox(sheetNameTable[1]["gameName"])
-
 ; 해당 게임명에 대한 가상키 데이터 불러오기
-LoadKeyData(gameName)
+LoadKeyData(&gameName)
 {
     global sheetNameTable
     resultKeyDataTable := []
     sheetName := ""
     ; 해당 게임명 시트에 존재 확인
-    for i, row in sheetNameTable
+    for row in sheetNameTable
     {
         ; 존재하면 시트명 가져오기
         if(row["gameName"] = gameName)
@@ -146,9 +289,82 @@ LoadKeyData(gameName)
     sheetPath := sheetFolder . sheetName
     ; 해당 시트 데이터 불러오기
     sheetData := LoadSheetData(sheetPath)
-    ; FIXME 여기부터 작업 sheetData 가지고 저장하든 바로 하든
+
+    return sheetData
+}
+
+FindGameName(&gameName)
+{
+    global sheetNameTable
+    
+    ; 시트 이름 테이블에서 찾아보기
+    for i, row in sheetNameTable
+    {
+        if(row["gameName"] = gameName)
+            return true
+    }
+
+    return false
+}
+
+; keyData => 
+CreateHotKey(&curTitle, &keyData, &curHKInfo)
+{
+    for keyInfo in keyData
+    {
+        ; 타입 체크
+        if(keyInfo["type"] = "KEY")
+        {
+            ; 핫 키 생성
+            Hotkey("$" keyInfo["name"], ClickPos)
+            Hotkey("$" keyInfo["name"] " up", ReleaseBtn)
+            ; 키 맵에 추가
+            curHKInfo.AddHotKeyMap(&keyInfo)
+        }
+    }
+}
+
+CreateOverlay(&processHandle, &keyData, &curHKInfo)
+{
+    ; 창 위치 가져오기
+    pos := WinGetClientPos(&outX, &outY, &outWidth, &outHeight, "ahk_id " processHandle)
+
+    curClientPos := Vector2d(outX, outY)
+
+    ; 정보 배열 초기화
+    curHKInfo.ClearHotKey()
+
+    ; 새 오버레이 생성
+    for keyInfo in keyData
+    {
+        ToolTip("d: " keyInfo["name"])
+        newOverlay := OverlayInfo()
+        ; GUI 생성 | 포커스 비활성화
+        newOverlay.aGUI := Gui("LastFound -Caption AlwaysOnTop", "ToolWindow -Border *E0x20")
+        newOverlay.aGUI.Color := "dfdfdf"
+        newOverlay.aGUI.Add("Text", "x3 y2 " , keyInfo["name"])
+
+        ; 클라 위치에 맞추어 보정
+        cx := curClientPos.x + keyInfo["x"]
+        cy := curClientPos.y + keyInfo["y"]
+
+        weight := 4 + StrLen(keyInfo["name"]) * 8
+        
+        ; 오버레이 위치 업데이트
+        newOverlay.SetActive(true, "NoActivate w" weight " h15 x" cx " y" cy)
+    
+        oh := newOverlay.aGUI.Hwnd
+        ; 포커스 되지 않게 설정
+        DllCall("SetWindowLong", "Ptr", oh, "Int", -20, "Int", 0x80000 | 0x20 | 0x8)
+    }
+}
+
+
+RemoveHotKey()
+{
 
 }
+
 
 
 
@@ -221,51 +437,16 @@ for key, value in keyMap.OwnProps() {
     Hotkey("$" key " up", ReleaseBtn)                         
 }
 
-; 최초 프로그램 시작 대기
 SetTimer WaitStartProgram, 5000
 
+; 최초 프로그램 시작 대기
 WaitStartProgram()
 {
     global waitStart
     waitStart := true
 }
 
-; 타겟 프로그램 포커스 확인
-SetTimer CheckFocus, 30000 
 
-CheckFocus() 
-{
-    global canInput
-    global infoMap
-    global processHandle
-    ; 찾을 프로그램 이름
-    processHandle := WinActive(gameName)
-    canInput := processHandle ? true : false
-    ; ToolTip "" (canInput ? "it" : "if")
-
-    ; 입력 가능     
-    if(canInput)
-    {
-        ; 오버레이 활성화
-        ActiveOverlay(&processHandle)
-    }
-    else
-    {
-        for oneInfo in infoMap
-        {
-            oneInfo.SetActive(false)
-        }
-    }
-
-
-    ; 프로그램 없으면 종료
-    if(waitStart and !ProcessExist(processName))
-    {
-        ToolTip processName "이 종료됨. 핫 키 종료"
-        Sleep 1000
-        ExitApp
-    }
-}
 
 ; 입력 영역
 
@@ -274,22 +455,17 @@ CheckFocus()
 
 [ & Esc::WaitStartProgram                   
 
-#HotIf canInput   
 ; 해당 키 좌표 가져오기
 GetKeyPos(&valueAry, key)
 {
-    CheckFocus()
-
     ; $ 잘라내기
     key := StrReplace(key, "$")
     key := StrReplace(key, " up")    
     
-    if(!canInput or !keyMap.HasOwnProp(key))
+    if(!canInput or !hkInfo.hotKeyMap.HasOwnProp(key))
     {   
         if(!GetKeyState(key, "P"))
-        {
             return false
-        }                                               
 
         ToolTip(key)
         if(GetKeyState("Alt", "P"))
@@ -300,7 +476,7 @@ GetKeyPos(&valueAry, key)
     }
 
     ; 해당 키 좌표 가져오기
-    valueAry := keyMap.GetOwnPropDesc(key).Value
+    valueAry := hkInfo.hotKeyMap.GetOwnPropDesc(key).Value
 
     if(valueAry.Length < 2)
         return false
@@ -346,9 +522,6 @@ enableOverlay := true
 
     WinActivate(processHandle)
 }
-
-#HotIf 
-    
 
 ; 오버레이 기능 영역
 
