@@ -1,5 +1,6 @@
 ﻿#Requires AutoHotkey v2.0
 #SingleInstance Force
+#Include Lib\jsongo_AHKv2-main/src/jsongo.v2.ahk
 
 ; 클래스 선언
 
@@ -58,6 +59,17 @@ class HotKeyInfo
         this.hotKeyMap := Map()
         this.overlayMap := Map()    
     }
+
+    ; 오버레이 초기화
+    ClearOverlay()
+    {
+        for key, value in this.overlayMap
+        {
+            value.Destroy()
+        }
+
+        this.overlayMap := Map()
+    }
 }
 
 class Vector2d {
@@ -90,6 +102,8 @@ class OverlayInfo
     text := "?"
     isVisible := false
 
+    prevOption := ""
+
     ; 생성자
     __New(x := 0, y := 0, text := "?") {
         this.pos := Vector2d(x,y)
@@ -99,11 +113,22 @@ class OverlayInfo
     SetActive(value := true, option := "")
     {
         if(value)
+        {
+            ; 옵션 없으면 이전 옵션 재적용
+            if(option = "")
+                option := this.prevOption
+
+            if(this.prevOption != option)
+                this.prevOption := option
+            
             this.aGUI.Show(option)
+        }
         else
             this.aGUI.Hide()
 
         isVisible := value
+
+        
     }
 
     ; 오버레이 제거
@@ -117,6 +142,34 @@ class OverlayInfo
     }
 }
 
+; 설정 구조체
+class SettingData
+{
+    enableOverlay := true
+
+    ToMap()
+    {
+        map := {
+            enableOverlay : this.enableOverlay
+        }
+        
+        return map
+    }
+}
+
+; 전역 함수
+MapToClass(&mapData, classType) {
+    local instance := classType() ; 클래스 인스턴스 생성
+
+    for key, value in mapData {
+        if (instance.HasOwnProp(key)) {
+            instance.%key% := value ; Map의 값을 클래스 속성으로 설정
+        }
+    }
+
+    return instance
+}
+
 /* 스크립트 진행 구조
 1. 게임명 : 파일명 시트 정보 가져오기 | LoadSheetData => sheetNameMap
 2. 포커스 체크 딜리게이트 등록 | BindFocusChange -> ShellHook
@@ -124,8 +177,11 @@ class OverlayInfo
 -> 현재 매핑 게임명과 같은지 검사
 -> 다르면 키매핑 제거 | RemoveHotKey
 -> 다르면 시트에 해당 게임명 있는지 검사 | FindGameName
--> 있으면 해당 게임 키매핑 생성 | CreateHotKey
--> 없으면 전체 프로세스에 목표 게임 존재 체크
+
+있으면 키매핑 데이터 불러오기 | LoadKeyData
+-> 해당 게임 키매핑 생성 | CreateHotKey
+
+없으면 전체 프로세스에 목표 게임 존재 체크
 -> 없으면 스크립트 종료
 
 3. 가상키 누르기 | ClickPos
@@ -142,6 +198,15 @@ class OverlayInfo
 sheetFolder := A_ScriptDir . "\KeyData\"
 keySheetName := "JK_AHK_SheetNameKey.csv"
 
+; 설정 json 파일 
+settingPath := A_ScriptDir . "\Setting.ini"
+; 설정 데이터
+settings := LoadSetting(&settingPath)
+
+; 기본 가상키 데이터
+defaultKeySheetName := "JK_DefaultKeyData.csv"
+defaultKeySheetPath := sheetFolder . defaultKeySheetName
+
 ; 게임명 : 파일명 정보 구조체 | 배열 { 맵[헤더] : 값 }
 sheetNameTable := LoadSheetData(sheetFolder . keySheetName)
 
@@ -154,8 +219,36 @@ hkInfo := HotKeyInfo()
 ; 시작 대기 여부
 checkStart := false
 
-; 오버레이 투명도
+; 오버레이 투명도 | 0~255
 overlayOpacity := 100
+
+; 핫키 활성 여부
+isActive := false
+
+; 세팅 불러오기
+LoadSetting(&path)
+{
+    jsonData := FileRead(path, "UTF-8")
+    ; json map 변환 => 구조체로 변환
+    mapData := jsongo._Parse(jsonData)
+    return MapToClass(&mapData, SettingData)
+}
+
+; 세팅 저장하기
+SaveSetting(&settingData, &path) {
+    jsonString := jsongo.Stringify(settingData) ; JSON 문자열로 변환
+
+    ; 파일을 쓰기 모드로 열기
+    file := FileOpen(path, "w") ; "w" 모드는 덮어쓰기 모드
+    if !file 
+    {
+        MsgBox("파일을 열 수 없습니다: " path)
+        return
+    }
+
+    file.Write(jsonString) ; JSON 문자열 쓰기
+    file.Close() ; 파일 닫기
+}
 
 ; 프로그램 실행 영역
 BeginPlay()
@@ -194,6 +287,9 @@ ShellHook(wParam, lParam, *)
         ; lParam이 0이면 현재 활성 창의 핸들을 가져옵니다.
         hwnd := lParam || WinExist("A") 
 
+        if(!hwnd) 
+            return
+
         curTitle := WinGetTitle(hwnd)
         ; ToolTip curTitle
         ; 프로그램 체크
@@ -207,6 +303,7 @@ CheckFocus(&curTitle)
     global sheetNameTable
     global curTargetTitle
     global hkInfo
+    global isActive
 
     ; 현재 목표 게임인지 체크
     if(curTargetTitle = curTitle)
@@ -217,7 +314,8 @@ CheckFocus(&curTitle)
     ; 변경되었으니 키 매핑 제거
     RemoveHotKey()
     ; 시트에 있는 게임인지 체크
-    if(FindGameName(&curTitle))
+    isActive := FindGameName(&curTitle)
+    if(isActive)
     {
         ; ToolTip("시트에 있음 키매핑 생성: " curTitle)
 
@@ -227,6 +325,7 @@ CheckFocus(&curTitle)
 
         ; 가상키 생성
         CreateHotKey(&curTitle, &hkInfo)
+        
         ; 오버레이 생성
         CreateOverlay(&processHandle, &hkInfo)
     }
@@ -250,7 +349,7 @@ CheckFocus(&curTitle)
         {
             ToolTip "목표 게임 없음. 핫 키 종료"
             Sleep 1000
-            ExitApp
+            CloseScript
         }
     }
 }
@@ -290,7 +389,7 @@ LoadSheetData(csvFilePath)
     return data
 }
 
-; 해당 게임명에 대한 가상키 데이터 불러오기
+; 해당 게임명에 대한 가상키 데이터 불러오기 + 기본 키 데이터
 LoadKeyData(&gameName)
 {
     global sheetNameTable
@@ -311,13 +410,22 @@ LoadKeyData(&gameName)
         return resultKeyDataTable
 
     ; 파일 경로 설정
-    sheetPath := sheetFolder . sheetName
+    gameSheetPath := sheetFolder . sheetName
     ; 해당 시트 데이터 불러오기
-    sheetData := LoadSheetData(sheetPath)
+    gameKeyData := LoadSheetData(gameSheetPath)
+
+    ; 기본 키 데이터 불러오기
+    defaultKeyData := LoadSheetData(defaultKeySheetPath)
+
+    ; 결합
+    fullKeyData := []
+    fullKeyData.Push(gameKeyData*)
+    fullKeyData.Push(defaultKeyData*)
+
 
     keyDataMap := Map()
     ; 가상키 데이터 클래스로 변환
-    for oneData in sheetData
+    for oneData in fullKeyData
     {
         keyDataMap[oneData["name"]] := KeyData(&oneData)
     }
@@ -358,6 +466,8 @@ CreateHotKey(&curTitle, &curHKInfo)
 
 CreateOverlay(&processHandle, &curHKInfo)
 {
+    if(!processHandle || processHandle = 0)
+        return
     ; 창 위치 가져오기
     pos := WinGetClientPos(&outX, &outY, &outWidth, &outHeight, "ahk_id " processHandle)
 
@@ -368,7 +478,10 @@ CreateOverlay(&processHandle, &curHKInfo)
     {
         newOverlay := OverlayInfo()
         ; GUI 생성 | 포커스 비활성화
-        newOverlay.aGUI := Gui("LastFound -Caption AlwaysOnTop", "ToolWindow -Border *E0x20")
+        newOverlay.aGUI := Gui("LastFound -Caption AlwaysOnTop", "-ToolWindow -Border *E0x20")
+
+        
+
         newOverlay.aGUI.Color := "dfdfdf"
         newOverlay.aGUI.Add("Text", "x3 y2 " , keyData.name)
         ; 투명도 0~255
@@ -381,12 +494,14 @@ CreateOverlay(&processHandle, &curHKInfo)
         weight := 4 + StrLen(keyData.name) * 8
         
         ; 오버레이 위치 업데이트
-        newOverlay.SetActive(true, "NoActivate w" weight " h15 x" cx " y" cy)
+        option := "NoActivate w" weight " h15 x" cx " y" cy
+        ; 설정에 따라 오버레이 활성화
+        newOverlay.SetActive(settings.enableOverlay, option)
     
         oh := newOverlay.aGUI.Hwnd
         ; 포커스 되지 않게 설정
         DllCall("SetWindowLong", "Ptr", oh, "Int", -20, "Int", 0x80000 | 0x20 | 0x8)
-
+        
         ; 오버레이 맵에 추가
         curHKInfo.overlayMap[newOverlay.aGUI.Hwnd] := newOverlay
     }
@@ -402,7 +517,7 @@ RemoveHotKey()
 ; 입력 영역
 
 ; 종료
-] & Esc::ExitApp
+] & Esc::CloseScript
 ; 디버그용 즉시 체크 시작
 [ & Esc::WaitStartProgram                   
 
@@ -451,19 +566,37 @@ ReleaseBtn(hotKey)
     return                       
 }
 
-; @@ 오버레이 플립 기능
-; enableOverlay := true
+#HotIf isActive
 
-; ` up:: {
-;     ; flip
-;     global enableOverlay
-;     global infoMap
-;     enableOverlay := !enableOverlay
+` up:: {
+    global settings
+    global hkInfo
+    ; flip
+    
+    settings.enableOverlay := !settings.enableOverlay
 
-;     for oneInfo in infoMap
-;     {
-;         oneInfo.SetActive(enableOverlay)
-;     }
+    processHandle := WinActive(curTargetTitle)
 
-;     WinActivate(processHandle)
-; }
+    if(settings.enableOverlay)
+    {
+        CreateOverlay(&processHandle, &hkInfo)
+    }
+    else
+    {
+        hkInfo.ClearOverlay()
+    }
+}
+
+#HotIf 
+
+; 스크립트 종료
+CloseScript()
+{
+    global settingPath
+    
+    ; 설정 저장
+    settingMap := settings.ToMap()
+    SaveSetting(&settingMap, &settingPath)
+
+    ExitApp
+}
