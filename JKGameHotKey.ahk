@@ -478,9 +478,7 @@ CreateOverlay(&processHandle, &curHKInfo)
     {
         newOverlay := OverlayInfo()
         ; GUI 생성 | 포커스 비활성화
-        newOverlay.aGUI := Gui("LastFound -Caption AlwaysOnTop", "-ToolWindow -Border *E0x20")
-
-        
+        newOverlay.aGUI := Gui("LastFound -Caption AlwaysOnTop +ToolWindow -Border")
 
         newOverlay.aGUI.Color := "dfdfdf"
         newOverlay.aGUI.Add("Text", "x3 y2 " , keyData.name)
@@ -492,15 +490,15 @@ CreateOverlay(&processHandle, &curHKInfo)
         cy := curClientPos.y + keyData.pos.y
 
         weight := 4 + StrLen(keyData.name) * 8
-        
-        ; 오버레이 위치 업데이트
-        option := "NoActivate w" weight " h15 x" cx " y" cy
-        ; 설정에 따라 오버레이 활성화
-        newOverlay.SetActive(settings.enableOverlay, option)
     
         oh := newOverlay.aGUI.Hwnd
         ; 포커스 되지 않게 설정
         DllCall("SetWindowLong", "Ptr", oh, "Int", -20, "Int", 0x80000 | 0x20 | 0x8)
+
+        ; 오버레이 위치 업데이트
+        option := "NoActivate w" weight " h15 x" cx " y" cy
+        ; 설정에 따라 오버레이 활성화
+        newOverlay.SetActive(settings.enableOverlay, option)
         
         ; 오버레이 맵에 추가
         curHKInfo.overlayMap[newOverlay.aGUI.Hwnd] := newOverlay
