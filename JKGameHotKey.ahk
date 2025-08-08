@@ -1,6 +1,7 @@
 ﻿#Requires AutoHotkey v2.0
 #SingleInstance Force
 #Include Lib\jsongo_AHKv2-main/src/jsongo.v2.ahk
+#Include Utility.ahk
 
 ; 클래스 선언
 
@@ -12,7 +13,7 @@ class KeyData
     type := ""
     description := ""
 
-    __New(&sheetDataMap)
+    __New(sheetDataMap)
     {
         this.name := sheetDataMap["name"]
         this.pos := Vector2d(sheetDataMap["x"], sheetDataMap["y"])
@@ -69,28 +70,6 @@ class HotKeyInfo
         }
 
         this.overlayMap := Map()
-    }
-}
-
-class Vector2d {
-    x := 0
-    y := 0
-
-    ; 생성자
-    __New(x := 0, y := 0) {
-        this.x := x
-        this.y := y
-    }
-
-    IsEqual(&other)
-    {
-        return this.x == other.x 
-            && this.y == other.y
-    }
-
-    ToString()
-    {
-        return Format("x : {1}, y : {2}", this.x, this.y)
     }
 }
 
@@ -157,17 +136,20 @@ class SettingData
     }
 }
 
-; 전역 함수
-MapToClass(&mapData, classType) {
-    local instance := classType() ; 클래스 인스턴스 생성
+; 전역 함수 단
+
+; map 데이터 => 클래스 로 변경
+MapToClass(&mapData, classType) 
+{
+    local newClassIns := classType() ; 클래스 인스턴스 생성
 
     for key, value in mapData {
-        if (instance.HasOwnProp(key)) {
-            instance.%key% := value ; Map의 값을 클래스 속성으로 설정
+        if (newClassIns.HasOwnProp(key)) {
+            newClassIns.%key% := value ; Map의 값을 클래스 속성으로 설정
         }
     }
 
-    return instance
+    return newClassIns
 }
 
 /* 스크립트 진행 구조
@@ -194,10 +176,6 @@ MapToClass(&mapData, classType) {
 
 ; 전역 변수 영역
 
-; 게임명 : 파일명 시트 경로
-sheetFolder := A_ScriptDir . "\KeyData\"
-keySheetName := "JK_AHK_SheetNameKey.csv"
-
 ; 설정 json 파일 
 settingPath := A_ScriptDir . "\Setting.ini"
 ; 설정 데이터
@@ -207,13 +185,17 @@ settings := LoadSetting(&settingPath)
 defaultKeySheetName := "JK_DefaultKeyData.csv"
 defaultKeySheetPath := sheetFolder . defaultKeySheetName
 
+; 게임명 : 파일명 시트 경로
+keySheetName := "JK_AHK_SheetNameKey.csv"
+keySheetPath := sheetFolder . keySheetName
+
 ; 게임명 : 파일명 정보 구조체 | 배열 { 맵[헤더] : 값 }
-sheetNameTable := LoadSheetData(sheetFolder . keySheetName)
+sheetNameTable := LoadSheetData(keySheetPath)
 
 ; 현재 목표 게임명
 curTargetTitle := ""
 
-; 가상키 데이터 배열
+; 가상키 데이터 맵
 hkInfo := HotKeyInfo()
 
 ; 시작 대기 여부
@@ -250,7 +232,7 @@ SaveSetting(&settingData, &path) {
     file.Close() ; 파일 닫기
 }
 
-; 프로그램 실행 영역
+; ========프로그램 실행 영역
 BeginPlay()
 
 BeginPlay()
@@ -268,6 +250,7 @@ WaitStartProgram()
     global checkStart
     checkStart := true
 }
+
 
 BindFocusChange()
 {
@@ -354,46 +337,11 @@ CheckFocus(&curTitle)
     }
 }
 
-
-; 시트 데이터 구조체로 변환하기
-LoadSheetData(csvFilePath)
-{
-    ; csv 데이터
-    csvData := FileRead(csvFilePath, "UTF-8")
-    
-    ; 행 분리
-    rows := StrSplit(csvData, "`r`n")
-
-    ; 헤더 가져오기
-    headers := StrSplit(rows[1], ",")
-
-    ; 시트 구분해서 구조체에 저장
-    data := []
-    
-    for i, row in rows {
-        if(i = 1)
-            continue
-
-        rowData := StrSplit(row, ",")
-        ; 행 데이터 구조체화
-        field := Map()
-        
-        for index, header in headers
-        {
-            field[header] := rowData[index]
-        }
-
-        data.Push(field)
-    }
-
-    return data
-}
-
 ; 해당 게임명에 대한 가상키 데이터 불러오기 + 기본 키 데이터
 LoadKeyData(&gameName)
 {
     global sheetNameTable
-    resultKeyDataTable := []
+    
     sheetName := ""
     ; 해당 게임명 시트에 존재 확인
     for row in sheetNameTable
@@ -405,9 +353,9 @@ LoadKeyData(&gameName)
             break
         }
     }
-
+    ; 비 존재시 함수 종료
     if(sheetName = "")
-        return resultKeyDataTable
+        return Map()
 
     ; 파일 경로 설정
     gameSheetPath := sheetFolder . sheetName
@@ -422,12 +370,12 @@ LoadKeyData(&gameName)
     fullKeyData.Push(gameKeyData*)
     fullKeyData.Push(defaultKeyData*)
 
-
+    ; 반환 값 선언
     keyDataMap := Map()
     ; 가상키 데이터 클래스로 변환
     for oneData in fullKeyData
     {
-        keyDataMap[oneData["name"]] := KeyData(&oneData)
+        keyDataMap[oneData["name"]] := KeyData(oneData)
     }
 
     ; 가상키 데이터 맵 반환
@@ -512,12 +460,13 @@ RemoveHotKey()
     hkInfo.ClearHotKey()
 }
 
-; 입력 영역
+; ===========입력 영역
 
-; 종료
-] & Esc::CloseScript
-; 디버그용 즉시 체크 시작
+; XXX 디버그용 즉시 체크 시작
 [ & Esc::WaitStartProgram                   
+
+; 종료 키
+] & Esc::CloseScript
 
 ; 해당 키 좌표 가져오기
 GetKeyPos(&pos2D, key)
@@ -566,6 +515,7 @@ ReleaseBtn(hotKey)
 
 #HotIf isActive
 
+; 오버레이 토글
 ` up:: {
     global settings
     global hkInfo
@@ -584,6 +534,9 @@ ReleaseBtn(hotKey)
         hkInfo.ClearOverlay()
     }
 }
+
+; @@ 현재 게임 기본 위치로
+
 
 #HotIf 
 
