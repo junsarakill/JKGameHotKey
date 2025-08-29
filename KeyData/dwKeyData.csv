@@ -1,7 +1,7 @@
 name,x,y,type,description
 Tab,1204,66,KEY,menu
 Esc,55,55,KEY,
-f,1047,370,KEY,quest
+f,1047,259,KEY,quest
 g,1177,574,KEY,charge
 1,128,593,KEY,
 2,210,593,KEY,
