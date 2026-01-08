@@ -2,6 +2,7 @@
 #SingleInstance Force
 #Include Lib\jsongo_AHKv2-main/src/jsongo.v2.ahk
 #Include Utility.ahk
+#Include SetGameDefaultPosition.ahk
 
 ; 클래스 선언
 
@@ -535,7 +536,8 @@ ReleaseBtn(hotKey)
     }
 }
 
-; @@ 현재 게임 기본 위치로
+; 현재 게임 기본 위치로
+F7::RunSetGameDefaultPosition()
 
 
 #HotIf 
