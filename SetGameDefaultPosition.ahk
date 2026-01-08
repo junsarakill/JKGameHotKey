@@ -4,7 +4,7 @@
 ; 클래스 영역
 
 ; 게임명 : 기본 위치 데이터
-class PosInfo
+class PosData
 {
     name := "" ; string
     pos := "" ; vector2d
@@ -24,48 +24,64 @@ class PosInfo
 defaultPosSheetName := "JK_GameDefaultPosition.csv"
 defaultPosSheetPath := sheetFolder . defaultPosSheetName
 
-; 기본 위치 데이터
-; @@ TODO 시트 로드해서 데이터 가져오기
+;기본 위치 데이터 | PosData 배열
+defaultPosData := LoadDefaultPosSheetData(defaultPosSheetPath)
 
-
-; @@ 게임 프로세스 받아서 시트에 있는 기본 위치로 창 옮기기
-SetDefaultPosition(processName)
+; 기본 위치 시트 데이터 PosData 구조체 배열로 변환
+LoadDefaultPosSheetData(defaultPosSheetPath)
 {
-    ; @@ 시트에서 해당 게임 위치 데이터 가져오기
+    ; 맵 변환한 시트 데이터 배열
+    dataAry := LoadSheetData(defaultPosSheetPath)
     
-    ; @@ 위치 이동
-    SetPosition(processName, processPosInfo)
+    ; PosData 배열 형태로 반환할 값
+    posDataAry := []
+    for oneData in dataAry
+    {
+        onePosData := PosData(oneData["name"], oneData["x"], oneData["y"], oneData["monitor"])
+
+        posDataAry.Push(onePosData)
+    }
+
+    return posDataAry
 }
 
-; 해당 위치로 프로세스 위치 이동
-SetPosition(processName, posInfo)
+
+; 위치 데이터 받아서 시트에 있는 기본 위치로 창 옮기기
+SetDefaultPosition(posData)
 {
-    ; ToolTip Format("{1} , {2}", processName, posInfo.x)
-    
-    ; 창 위치 이동
-    WinMove(posInfo.x, posInfo.y, , ,processName)
-
-    ; WinGetPos(&x,&y,&w,&h,processName)
-    ; ToolTip("X: " . x . "`nY: " . y . "`nWidth: " . w . "`nHeight: " . h)
+    ; 전체 프로세스에 해당 게임 존재 체크
+    if(WinExist(posData.name))
+    {
+        ; 위치 이동
+        WinMove(posData.pos.x, posData.pos.y, , , posData.name)
+    }
 }
 
-
-; @@ 디버그용
-F1::
+; 시트내 모든 게임에 위치 변경
+RunSetGameDefaultPosition()
 {
-    curTitle := WinGetTitle("ドルウェブ") ; "A"는 현재 활성화된 창을 의미합니다.
-
-    targetPos := PosInfo()
-    targetPos.x := 0
-    targetPos.y := 0
-
-    SetPosition(curTitle, targetPos)
+    global defaultPosData
+    for posData in defaultPosData
+    {
+        SetDefaultPosition(posData)
+    }
 }
 
-; 종료 키
-] & Esc::CloseScript
 
-CloseScript()
-{
-    ExitApp
-}
+; XXX 디버그용
+; F7::
+; {
+;     global defaultPosData
+;     for posData in defaultPosData
+;     {
+;         SetDefaultPosition(posData)
+;     }
+; }
+
+; XXX 종료 키
+; ] & Esc::CloseScript
+
+; CloseScript()
+; {
+;     ExitApp
+; }
