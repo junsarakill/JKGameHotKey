@@ -4,7 +4,7 @@
 #Include Utility.ahk
 #Include SetGameDefaultPosition.ahk
 
-; 클래스 선언
+; MARK: 클래스 선언
 
 ; 가상키 데이터
 class KeyData
@@ -137,7 +137,7 @@ class SettingData
     }
 }
 
-; 전역 함수 단
+; MARK: 전역 함수 단
 
 ; map 데이터 => 클래스 로 변경
 MapToClass(&mapData, classType) 
@@ -153,7 +153,7 @@ MapToClass(&mapData, classType)
     return newClassIns
 }
 
-/* 스크립트 진행 구조
+/* MARK: 스크립트 진행 구조
 1. 게임명 : 파일명 시트 정보 가져오기 | LoadSheetData => sheetNameMap
 2. 포커스 체크 딜리게이트 등록 | BindFocusChange -> ShellHook
 -> 포커스 체크 | CheckFocus
@@ -175,7 +175,7 @@ MapToClass(&mapData, classType)
 
 */
 
-; 전역 변수 영역
+; MARK: 전역 변수 영역
 
 ; 설정 json 파일 
 settingPath := A_ScriptDir . "\Setting.ini"
@@ -233,7 +233,14 @@ SaveSetting(&settingData, &path) {
     file.Close() ; 파일 닫기
 }
 
-; ========프로그램 실행 영역
+; MARK: 프로그램 실행 영역
+
+; 관리자 권한 실행
+if !A_IsAdmin
+{
+    Run('*RunAs "' A_AhkPath '" /Restart "' A_ScriptFullPath '"')
+    ExitApp()
+}
 BeginPlay()
 
 BeginPlay()
@@ -461,7 +468,7 @@ RemoveHotKey()
     hkInfo.ClearHotKey()
 }
 
-; ===========입력 영역
+; MARK: 입력 영역
 
 ; XXX 디버그용 즉시 체크 시작
 [ & Esc::WaitStartProgram                   
