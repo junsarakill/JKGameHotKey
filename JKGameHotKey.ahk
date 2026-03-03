@@ -241,6 +241,10 @@ if !A_IsAdmin
     Run('*RunAs "' A_AhkPath '" /Restart "' A_ScriptFullPath '"')
     ExitApp()
 }
+
+; shell32.dll의 44번 아이콘(별 모양)을 트레이 아이콘으로 설정
+TraySetIcon("JKGameHotKeyICO.ico")
+
 BeginPlay()
 
 BeginPlay()
