@@ -28,3 +28,4 @@ R,1154,43,OVERLAY,되돌리기
 F1,358,115,KEY,itemBoxOpen
 Left,10,358,KEY,
 Right,1330,358,KEY,
+c,240,720,OVERLAY,보정용(필요시 KEY 변경)
