@@ -186,6 +186,18 @@ settings := LoadSetting(&settingPath)
 defaultKeySheetName := "JK_DefaultKeyData.csv"
 defaultKeySheetPath := sheetFolder . defaultKeySheetName
 
+/* @@ 시트는 다 Sheet 폴더 만들어서 모아두기.
+    Sheet/KeyData/ 폴더에 가상키 시트 모아두기.
+    따라서 발생하는 sheetFolder, keySheetPath 변수 변경.
+    그리고 시트 이름 에 .local.csv 붙여서 .local 붙은 시트는 깃에서 제외하기
+    
+    게임 시트 이름 시트도 이름 .local 붙이고 새로 .default 시트 추가.
+    KeySheetName 정할때, local 탐색 후 없으면 default 넣는 기능 추가.
+
+    이후 깃에 올라갈 default 용 시트 추가.
+
+ */ 
+
 ; 게임명 : 파일명 시트 경로
 keySheetName := "JK_AHK_SheetNameKey.csv"
 keySheetPath := sheetFolder . keySheetName

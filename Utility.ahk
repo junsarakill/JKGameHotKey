@@ -23,7 +23,11 @@ class Vector2d {
     }
 }
 
+; MARK: 전역 변수 단
+
 sheetFolder := A_ScriptDir . "\KeyData\"
+
+; MARK: 전역 함수 단
 
 ; 시트 데이터 구조체로 변환하기
 LoadSheetData(csvFilePath)
