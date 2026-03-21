@@ -186,24 +186,26 @@ settings := LoadSetting(&settingPath)
 defaultKeySheetName := "JK_DefaultKeyData.csv"
 defaultKeySheetPath := sheetFolder . defaultKeySheetName
 
-/* @@ 시트는 다 Sheet 폴더 만들어서 모아두기.
-    Sheet/KeyData/ 폴더에 가상키 시트 모아두기.
-    따라서 발생하는 sheetFolder, keySheetPath 변수 변경.
+/* @@ 
+    @@1 시트는 다 Sheet 폴더 만들어서 모아두기.
+    @@2 Sheet/KeyData/ 폴더에 가상키 시트 모아두기.
+    @@3 따라서 발생하는 sheetFolder, keySheetPath 변수 변경.
     
-    게임 시트 이름 시트도 이름 .local 붙이고 새로 .default 시트 추가.
-    KeySheetName 정할때, local 탐색 후 없으면 default 넣는 기능 추가.
+    XXX4 게임 시트 이름 시트도 이름 .local 붙이고 새로 .default 시트 추가.
+    @@5 KeySheetName 정할때, local 탐색 후 없으면 default 넣는 기능 추가.
 
-    이후 깃에 올라갈 default 용 시트 추가.
+    XXX6 이후 깃에 올라갈 default 용 시트 추가.
 
-    그리고 시트 탐색시 자동으로 .csv 붙이게 하고 게임 이름 시트에선 .csv 제거하기
+    @@7 그리고 시트 탐색시 자동으로 .csv 붙이게 하고 게임 이름 시트에선 .csv 제거하기
 
  */ 
 
 ; 게임명 : 파일명 시트 경로
-keySheetName := "JK_AHK_SheetNameKey.csv"
+keySheetName := "JK_AHK_SheetNameKey" . sheetEXT
 keySheetPath := sheetFolder . keySheetName
 
 ; 게임명 : 파일명 정보 구조체 | 배열 { 맵[헤더] : 값 }
+; @@5 default, local 우선순위 찾기 로직 필요
 sheetNameTable := LoadSheetData(keySheetPath)
 
 ; 현재 목표 게임명
@@ -383,6 +385,8 @@ LoadKeyData(&gameName)
         return Map()
 
     ; 파일 경로 설정
+    ; @@7 sheetEXT 추가 필요
+    ; @@3 가상키폴더로 경로 변경
     gameSheetPath := sheetFolder . sheetName
     ; 해당 시트 데이터 불러오기
     gameKeyData := LoadSheetData(gameSheetPath)
