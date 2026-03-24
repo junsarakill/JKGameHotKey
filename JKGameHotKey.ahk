@@ -184,12 +184,12 @@ settings := LoadSetting(&settingPath)
 
 ; 기본 가상키 데이터
 defaultKeySheetName := "JK_DefaultKeyData.csv"
-defaultKeySheetPath := sheetFolder . defaultKeySheetName
+defaultKeySheetPath := keyDataFolder . defaultKeySheetName
 
 /* @@ 
-    @@1 시트는 다 Sheet 폴더 만들어서 모아두기.
-    @@2 Sheet/KeyData/ 폴더에 가상키 시트 모아두기.
-    @@3 따라서 발생하는 sheetFolder, keySheetPath 변수 변경.
+    XXX1 시트는 다 Sheet 폴더 만들어서 모아두기.
+    XXX2 Sheet/KeyData/ 폴더에 가상키 시트 모아두기.
+    XXX3 따라서 발생하는 sheetFolder, keySheetPath 변수 변경.
     
     XXX4 게임 시트 이름 시트도 이름 .local 붙이고 새로 .default 시트 추가.
     @@5 KeySheetName 정할때, local 탐색 후 없으면 default 넣는 기능 추가.
@@ -385,9 +385,7 @@ LoadKeyData(&gameName)
         return Map()
 
     ; 파일 경로 설정
-    ; @@7 sheetEXT 추가 필요
-    ; @@3 가상키폴더로 경로 변경
-    gameSheetPath := sheetFolder . sheetName
+    gameSheetPath := keyDataFolder . sheetName . sheetEXT
     ; 해당 시트 데이터 불러오기
     gameKeyData := LoadSheetData(gameSheetPath)
 

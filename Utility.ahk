@@ -26,9 +26,9 @@ class Vector2d {
 ; MARK: 전역 변수 단
 
 ; 시트 폴더
-; @@3 sheet 로 변경 필요
-; @@3 sheet/keydata/ 변수 추가 필요 (게임 가상키 시트)
-sheetFolder := A_ScriptDir . "\KeyData\"
+sheetFolder := A_ScriptDir . "\Sheet\"
+; 가상키 시트 폴더
+keyDataFolder := sheetFolder . "\KeyData\"
 
 ; 시트 확장자
 sheetEXT := ".csv"
