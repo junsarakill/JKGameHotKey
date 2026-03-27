@@ -35,6 +35,18 @@ sheetEXT := ".csv"
 
 ; MARK: 전역 함수 단
 
+; @@5 KeySheetName 정할때, local 탐색 후 없으면 default 넣는 기능 추가. 
+; @@7 그리고 시트 탐색시 자동으로 .csv 붙이게 하고 게임 이름 시트에선 .csv 제거하기
+; 폴더 위치, 파일 이름 받아서 시트 데이터 불러오기
+LoadPrioritySheetData(csvFolderPath, csvFileName)
+{
+    /** 탐색순서
+     * {folderPath}/{fileName}.{ext} (분리없는 파일)
+    {folderPath}/{fileName}.local.{ext} (개별 설정)
+    {folderPath}/{fileName}.default.{ext} (공통 기본값)
+     */
+}
+
 ; 시트 데이터 구조체로 변환하기
 LoadSheetData(csvFilePath)
 {
