@@ -35,8 +35,8 @@ sheetEXT := ".csv"
 
 ; MARK: 전역 함수 단
 
-; @@5 KeySheetName 정할때, local 탐색 후 없으면 default 넣는 기능 추가. 
-; @@7 그리고 시트 탐색시 자동으로 .csv 붙이게 하고 게임 이름 시트에선 .csv 제거하기
+; XXX5 KeySheetName 정할때, local 탐색 후 없으면 default 넣는 기능 추가. 
+; XXX7 그리고 시트 탐색시 자동으로 .csv 붙이게 하고 게임 이름 시트에선 .csv 제거하기
 ; 폴더 위치, 파일 이름 받아서 시트 데이터 불러오기
 LoadPrioritySheetData(csvFolderPath, csvFileName)
 {
@@ -45,18 +45,41 @@ LoadPrioritySheetData(csvFolderPath, csvFileName)
     {folderPath}/{fileName}.local.{ext} (개별 설정)
     {folderPath}/{fileName}.default.{ext} (공통 기본값)
      */
+    priorityAry := [
+        ""
+        ,".local"
+        ,".default"
+    ]
+
+    ; 조합될 경로
+    csvPath := ""
     ; 배열로 해서 포 돌리기
+    for curPR in priorityAry
+    {
+        ; 경로 조합
+        curCSVPath := csvFolderPath . csvFileName . curPR . sheetEXT
 
-    ; 존재확인 
-    ; FileExist(path)
+        ; 존재확인 
+        if(FileExist(curCSVPath))
+        {
+            ; 있으면 해당 경로 확정 포 종료
+            csvPath := curCSVPath
+            break
+        }
+    }
 
-    ; 있으면 해당 경로 확정 포 종료
+    ; 반환할 시트 데이터
+    sheetData := []
 
-    ; 해당 경로로 시트 받기
-    ; LoadSheetData(csvFilePath)
+    ; 경로 유효 확인
+    if(csvPath != "")
+    {
+        ; 해당 경로로 시트 데이터 받기
+        sheetData := LoadSheetData(csvPath)
+    }
     ; 결과 리턴
 
-
+    return sheetData
 }
 
 ; 시트 데이터 구조체로 변환하기
