@@ -45,6 +45,18 @@ LoadPrioritySheetData(csvFolderPath, csvFileName)
     {folderPath}/{fileName}.local.{ext} (개별 설정)
     {folderPath}/{fileName}.default.{ext} (공통 기본값)
      */
+    ; 배열로 해서 포 돌리기
+
+    ; 존재확인 
+    ; FileExist(path)
+
+    ; 있으면 해당 경로 확정 포 종료
+
+    ; 해당 경로로 시트 받기
+    ; LoadSheetData(csvFilePath)
+    ; 결과 리턴
+
+
 }
 
 ; 시트 데이터 구조체로 변환하기
