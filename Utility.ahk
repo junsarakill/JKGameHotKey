@@ -35,8 +35,7 @@ sheetEXT := ".csv"
 
 ; MARK: 전역 함수 단
 
-; XXX5 KeySheetName 정할때, local 탐색 후 없으면 default 넣는 기능 추가. 
-; XXX7 그리고 시트 탐색시 자동으로 .csv 붙이게 하고 게임 이름 시트에선 .csv 제거하기
+; @@ 지금 무조건 확장자 추가하는데 정규식으로 확인해서 확장자 없을때만 추가하는건 어떨까?
 ; 폴더 위치, 파일 이름 받아서 시트 데이터 불러오기
 LoadPrioritySheetData(csvFolderPath, csvFileName)
 {
