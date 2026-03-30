@@ -154,7 +154,7 @@ MapToClass(&mapData, classType)
 }
 
 /* MARK: 스크립트 진행 구조
-1. 게임명 : 파일명 시트 정보 가져오기 | LoadSheetData => sheetNameMap
+1. 게임명 : 파일명 시트 정보 가져오기 | LoadPrioritySheetData => sheetNameMap
 2. 포커스 체크 딜리게이트 등록 | BindFocusChange -> ShellHook
 -> 포커스 체크 | CheckFocus
 -> 현재 매핑 게임명과 같은지 검사
@@ -183,15 +183,15 @@ settingPath := A_ScriptDir . "\Setting.ini"
 settings := LoadSetting(&settingPath)
 
 ; 기본 가상키 데이터
-defaultKeySheetName := "JK_DefaultKeyData.csv"
-defaultKeySheetPath := sheetFolder . defaultKeySheetName
+defaultKeySheetName := "JK_DefaultKeyData"
+; defaultKeySheetPath := keyDataFolder . defaultKeySheetName
 
 ; 게임명 : 파일명 시트 경로
-keySheetName := "JK_AHK_SheetNameKey.csv"
-keySheetPath := sheetFolder . keySheetName
+keySheetName := "JK_AHK_SheetNameKey"
+; keySheetPath := sheetFolder . keySheetName
 
 ; 게임명 : 파일명 정보 구조체 | 배열 { 맵[헤더] : 값 }
-sheetNameTable := LoadSheetData(keySheetPath)
+sheetNameTable := LoadPrioritySheetData(sheetFolder, keySheetName)
 
 ; 현재 목표 게임명
 curTargetTitle := ""
@@ -370,12 +370,12 @@ LoadKeyData(&gameName)
         return Map()
 
     ; 파일 경로 설정
-    gameSheetPath := sheetFolder . sheetName
+    ; gameSheetPath := keyDataFolder . sheetName . sheetEXT
     ; 해당 시트 데이터 불러오기
-    gameKeyData := LoadSheetData(gameSheetPath)
+    gameKeyData := LoadPrioritySheetData(keyDataFolder, sheetName)
 
     ; 기본 키 데이터 불러오기
-    defaultKeyData := LoadSheetData(defaultKeySheetPath)
+    defaultKeyData := LoadPrioritySheetData(keyDataFolder, defaultKeySheetName)
 
     ; 결합
     fullKeyData := []

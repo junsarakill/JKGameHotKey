@@ -23,7 +23,63 @@ class Vector2d {
     }
 }
 
-sheetFolder := A_ScriptDir . "\KeyData\"
+; MARK: 전역 변수 단
+
+; 시트 폴더
+sheetFolder := A_ScriptDir . "\Sheet\"
+; 가상키 시트 폴더
+keyDataFolder := sheetFolder . "\KeyData\"
+
+; 시트 확장자
+sheetEXT := ".csv"
+
+; MARK: 전역 함수 단
+
+; @@ 지금 무조건 확장자 추가하는데 정규식으로 확인해서 확장자 없을때만 추가하는건 어떨까?
+; 폴더 위치, 파일 이름 받아서 시트 데이터 불러오기
+LoadPrioritySheetData(csvFolderPath, csvFileName)
+{
+    /** 탐색순서
+     * {folderPath}/{fileName}.{ext} (분리없는 파일)
+    {folderPath}/{fileName}.local.{ext} (개별 설정)
+    {folderPath}/{fileName}.default.{ext} (공통 기본값)
+     */
+    priorityAry := [
+        ""
+        ,".local"
+        ,".default"
+    ]
+
+    ; 조합될 경로
+    csvPath := ""
+    ; 배열로 해서 포 돌리기
+    for curPR in priorityAry
+    {
+        ; 경로 조합
+        curCSVPath := csvFolderPath . csvFileName . curPR . sheetEXT
+
+        ; 존재확인 
+        if(FileExist(curCSVPath))
+        {
+            ; 있으면 해당 경로 확정 포 종료
+            csvPath := curCSVPath
+            break
+        }
+    }
+
+    ; 반환할 시트 데이터
+    sheetData := []
+
+    ; 경로 유효 확인
+    if(csvPath != "")
+    {
+        ; 해당 경로로 시트 데이터 받기
+        sheetData := LoadSheetData(csvPath)
+    }
+    ; 결과 리턴
+
+    return sheetData
+}
 
 ; 시트 데이터 구조체로 변환하기
 LoadSheetData(csvFilePath)

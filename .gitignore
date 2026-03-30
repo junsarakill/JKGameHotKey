@@ -1,3 +1,5 @@
-
 Setting.ini
 *.code-workspace
+# 개인 시트 제외
+*.local.csv
+
