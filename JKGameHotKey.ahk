@@ -508,6 +508,10 @@ ClickPos(hotKey)
     ; 좌표 가져오기 및 입력 체크| 입력 불가시 return
     if(!GetKeyPos(&pos2D, hotKey))
         return
+    
+    ; 현재 활성창 체크
+    if(!WinActive(curTargetTitle))
+        return
 
     ; 해당 좌표 클릭
     MouseClick('L',pos2D.x,pos2D.y, 1,2,'D')
@@ -518,6 +522,10 @@ ReleaseBtn(hotKey)
 {   
     ; 좌표 가져오기 및 입력 체크| 입력 불가시 return
     if(!GetKeyPos(&pos2D, hotKey))
+        return
+    
+    ; 현재 활성창 체크
+    if(!WinActive(curTargetTitle))
         return
 
     ; 해당 좌표 클릭 해제제
