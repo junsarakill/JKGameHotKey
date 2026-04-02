@@ -246,12 +246,12 @@ class jsongo {
                     : (char == '}')
                         ? (ji++, (path[path.Length] is Map)
                             ? path_pop(&char)
-                        : err(34, ji, ']', char), (path.Length = 1) ? expect := xeof : 0`)
+                        : err(34, ji, ']', char), (path.Length = 1) ? expect := xeof : 0)
                     ; End of array
                     : (char == ']')
                         ? (ji++, (path[path.Length] is Array)
                             ? path_pop(&char)
-                        : err(35, ji, '}', char), (path.Length = 1) ? expect := xeof : 0`)
+                        : err(35, ji, '}', char), (path.Length = 1) ? expect := xeof : 0)
                     : err(36, ji, '`nEnd of array: ]`nEnd of object: }`nNext value: ,`nWhitespace: [Space] [Tab] [Linefeed] [Carriage Return]', char)
                 ; JSON 
                 case xeof: err(40, ji, 'End of JSON', char)
