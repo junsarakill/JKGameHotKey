@@ -474,11 +474,22 @@ RemoveHotKey()
 
 ; MARK: 입력 영역
 
+; MARK: 전역 입력 영역
+
 ; XXX 디버그용 즉시 체크 시작
 [ & Esc::WaitStartProgram                   
 
 ; 종료 키
 ] & Esc::CloseScript
+
+; @@ 스크립트 활성/비활성화 토글
+; 310 line 에 있는 가상키 제거, 가상키 생성 부분을 따와서 토글 함수에 추가
+; isActive 변경 시 작동하도록 프로퍼티화 해서 통합하는 것도 좋을듯.
+; Status {                        ; 변수와 프로퍼티를 하나의 블록처럼 관리
+;         get => this._status
+;         set => this._status := value
+;     }
+; ] & `::
 
 ; 해당 키 좌표 가져오기
 GetKeyPos(&pos2D, key)
@@ -534,6 +545,7 @@ ReleaseBtn(hotKey)
 }
 
 #HotIf isActive
+; MARK: 활성화 입력 영역
 
 ; 오버레이 토글
 ` up:: {
