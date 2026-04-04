@@ -175,7 +175,10 @@ MapToClass(&mapData, classType)
 
 */
 
+; @@ 변수 및 함수 큰 AppManager 클래스 안에 담기
+
 ; MARK: 전역 변수 영역
+; 이 부분 
 
 ; 설정 json 파일 
 settingPath := A_ScriptDir . "\Setting.ini"
@@ -205,8 +208,68 @@ checkStart := false
 ; 오버레이 투명도 | 0~255
 overlayOpacity := 100
 
-; 핫키 활성 여부
-isActive := false
+; FIXME 작업중
+; @@ 스크립트 활성/비활성화 토글
+
+; 310 line 에 있는 가상키 제거, 가상키 생성 부분을 따와서 토글 함수에 추가
+class AppManager 
+{
+    ; 핫키 활성 여부
+    static _isActive := false
+    static IsActive {
+        get => this._isActive
+        set {
+            this._isActive := value
+            ; @@ 상태 변경
+            ; this.OnActiveChanged()
+        }
+    }
+
+    ; FIXME 클래스화 끝나고 사용
+    static OnActiveChanged()
+    {
+        if(this.IsActive)
+        {
+            ; ToolTip("시트에 있음 키매핑 생성: " curTitle)
+
+
+            processHandle := WinActive(curTitle)
+            ; 키 매핑 시트 데이터 가져오기
+            hkInfo.hotKeyMap := LoadKeyData(&curTitle)
+
+            ; 가상키 생성
+            CreateHotKey(&curTitle, &hkInfo)
+            
+            ; 오버레이 생성
+            CreateOverlay(&processHandle, &hkInfo)
+        }
+        else if(checkStart)
+        {
+            ; ToolTip("dow" curTitle)
+            
+            ; 전체 프로세스에 시트 게임이 하나도 없는지 체크
+            isEnd := true
+            for row in sheetNameTable
+            {
+                if(WinExist(row["gameName"]))
+                {
+                    isEnd := false
+                    break
+                }
+            }
+            
+            ; 없으면 스크립트 종료
+            if(isEnd)
+            {
+                ToolTip "목표 게임 없음. 핫 키 종료"
+                Sleep 1000
+                CloseScript
+            }
+        }
+    }
+}
+
+
 
 ; 세팅 불러오기
 LoadSetting(&path)
@@ -308,9 +371,9 @@ CheckFocus(&curTitle)
 
     ; 변경되었으니 키 매핑 제거
     RemoveHotKey()
-    ; 시트에 있는 게임인지 체크
-    isActive := FindGameName(&curTitle)
-    if(isActive)
+    ; 시트에 있는 게임인지 체크해서 활성 유무 변경
+    AppManager.IsActive := FindGameName(&curTitle)
+    if(AppManager.IsActive)
     {
         ; ToolTip("시트에 있음 키매핑 생성: " curTitle)
 
@@ -483,6 +546,7 @@ RemoveHotKey()
 ] & Esc::CloseScript
 
 ; @@ 스크립트 활성/비활성화 토글
+
 ; 310 line 에 있는 가상키 제거, 가상키 생성 부분을 따와서 토글 함수에 추가
 ; isActive 변경 시 작동하도록 프로퍼티화 해서 통합하는 것도 좋을듯.
 ; Status {                        ; 변수와 프로퍼티를 하나의 블록처럼 관리
