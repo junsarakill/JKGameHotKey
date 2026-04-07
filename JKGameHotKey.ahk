@@ -6,7 +6,7 @@
 
 ; MARK: 클래스 선언
 
-; 가상키 데이터
+/** 가상키 데이터 */
 class KeyData
 {
     name := ""
@@ -47,8 +47,8 @@ class HotKeyInfo
             {                               
                 Hotkey("$" keyData.name, "Off") ; 핫키 비활성화
                 Hotkey("$" keyData.name " up", "Off") ; 핫키 비활성화
-                Hotkey("$" keyData.name, "") ; 핫키를 빈 문자열로 설정하여 제거
-                Hotkey("$" keyData.name " up", "") ; 핫키를 빈 문자열로 설정하여 제거       
+                ; Hotkey("$" keyData.name, "") ; 핫키를 빈 문자열로 설정하여 제거
+                ; Hotkey("$" keyData.name " up", "") ; 핫키를 빈 문자열로 설정하여 제거       
             }
         }                                   
 
@@ -63,6 +63,9 @@ class HotKeyInfo
     }
 
     ; 오버레이 초기화
+    /**
+     * 
+     */
     ClearOverlay()
     {
         for key, value in this.overlayMap
@@ -74,17 +77,26 @@ class HotKeyInfo
     }
 }
 
-; 좌표, gui 
+/**
+ * 오버레이 정보를 관리하는 클래스
+ */
 class OverlayInfo
 {
+    /** @type {Vector2d} */
     pos := Vector2d()
+    /** @type {Gui} */
     aGUI := Gui()
     text := "?"
     isVisible := false
 
     prevOption := ""
 
-    ; 생성자
+    /**
+     * @param {number} x 초기 X 좌표
+     * @param {number} y 초기 Y 좌표
+     * @param {string} text 표시할 텍스트
+     * @returns {OverlayInfo}
+     */
     __New(x := 0, y := 0, text := "?") {
         this.pos := Vector2d(x,y)
         this.text := text
@@ -106,9 +118,7 @@ class OverlayInfo
         else
             this.aGUI.Hide()
 
-        isVisible := value
-
-        
+        this.isVisible := value
     }
 
     ; 오버레이 제거
@@ -140,7 +150,7 @@ class SettingData
 ; MARK: 전역 함수 단
 
 ; map 데이터 => 클래스 로 변경
-MapToClass(&mapData, classType) 
+MapToClass(mapData, classType) 
 {
     local newClassIns := classType() ; 클래스 인스턴스 생성
 
@@ -153,44 +163,47 @@ MapToClass(&mapData, classType)
     return newClassIns
 }
 
-/* MARK: 스크립트 진행 구조
-1. 게임명 : 파일명 시트 정보 가져오기 | LoadPrioritySheetData => sheetNameMap
-2. 포커스 체크 딜리게이트 등록 | BindFocusChange -> ShellHook
--> 포커스 체크 | CheckFocus
--> 현재 매핑 게임명과 같은지 검사
--> 다르면 키매핑 제거 | RemoveHotKey
--> 다르면 시트에 해당 게임명 있는지 검사 | FindGameName
-
-있으면 키매핑 데이터 불러오기 | LoadKeyData
--> 해당 게임 키매핑 생성 | CreateHotKey
-
-없으면 전체 프로세스에 목표 게임 존재 체크
--> 없으면 스크립트 종료
-
-3. 가상키 누르기 | ClickPos
--> 해당 키 좌표 가져오기 | GetKeyPos
--> 해당 좌표 클릭 | MouseClick
--> 가상키 떼기 | ReleaseBtn
--> 이하 같음
-
+/** MARK: 스크립트 진행 구조
+* 1. 게임명 : 파일명 시트 정보 가져오기 | {@link JKUtility.LoadPrioritySheetData} => {@link AppManager.sheetNameTable}
+* 2. 포커스 체크 딜리게이트 등록 | BindFocusChange -> ShellHook
+* -> 포커스 체크 | CheckFocus
+* -> 현재 매핑 게임명과 같은지 검사
+* -> 다르면 키매핑 제거 | RemoveHotKey
+* -> 다르면 시트에 해당 게임명 있는지 검사 | {@link AppManager.FindGameName}
+* 있으면 키매핑 데이터 불러오기 | LoadKeyData
+-> 해당 게임 키매핑 생성 | {@link AppManager.CreateHotKey}  
+* 
+* 없으면 전체 프로세스에 목표 게임 존재 체크
+* -> 없으면 스크립트 종료
+* 
+* 3. 가상키 누르기 | ClickPos
+* -> 해당 키 좌표 가져오기 | GetKeyPos
+* -> 해당 좌표 클릭 | MouseClick
+* -> 가상키 떼기 | ReleaseBtn
+* -> 이하 같음
+* 
 */
 
-; @@ 변수 및 함수 큰 AppManager 클래스 안에 담기
-
-
-
 ; FIXME 클래스화 중
-; @@ 스크립트 활성/비활성화 토글
-
-; 310 line 에 있는 가상키 제거, 가상키 생성 부분을 따와서 토글 함수에 추가
 class AppManager 
 {
     ; MARK: 전역 변수 영역
 
-    ; 설정 json 파일 
-    static settingPath := A_ScriptDir . "\Setting.ini"
-    ; 설정 데이터
-    static settings := this.LoadSetting(&settingPath)
+    /**
+     * #### 설정 json 파일
+     * @type {String} 
+     * @readonly
+     */
+    static SETTING_PATH => A_ScriptDir . "\Setting.ini"
+
+    /**
+     * #### 설정 데이터
+     * @type {SettingData} 
+     * @readonly
+    */
+    static _settings := this.LoadSetting(this.SETTING_PATH) 
+    /** @type {SettingData} */
+    static SETTINGS => this._settings
 
     ; 기본 가상키 데이터
     static defaultKeySheetName := "JK_DefaultKeyData"
@@ -206,13 +219,19 @@ class AppManager
     ; 현재 목표 게임명
     static curTargetTitle := ""
 
-    ; 가상키 데이터 맵
-    static hkInfo := HotKeyInfo()
+    ; 가상키 데이터
+    /** @type {HotKeyInfo} */
+    static curHKInfo := HotKeyInfo()
 
     ; 시작 대기 여부
     static checkStart := false
 
-    ; 오버레이 투명도 | 0~255
+    /** 
+     * #### 가상키 오버레이 투명도
+     * @type {number} 
+     * @range `0` ~ `255`
+     * @default `100`  
+     */
     static overlayOpacity := 100
 
     ; 핫키 활성 여부
@@ -233,18 +252,17 @@ class AppManager
         {
             ; ToolTip("시트에 있음 키매핑 생성: " curTitle)
 
-
-            processHandle := WinActive(curTitle)
+            processHandle := WinActive(this.curTargetTitle)
             ; 키 매핑 시트 데이터 가져오기
-            hkInfo.hotKeyMap := this.LoadKeyData(&curTitle)
+            this.curHKInfo.hotKeyMap := this.LoadKeyData(this.curTargetTitle)
 
             ; 가상키 생성
-            this.CreateHotKey(&curTitle, &hkInfo)
+            this.CreateHotKey(this.curTargetTitle, this.curHKInfo)
             
             ; 오버레이 생성
-            this.CreateOverlay(&processHandle, &hkInfo)
+            this.CreateOverlay(processHandle, this.curHKInfo)
         }
-        else if(checkStart)
+        else if(this.checkStart)
         {
             ; ToolTip("dow" curTitle)
             
@@ -272,12 +290,10 @@ class AppManager
 
     ; 함수 영역
 
-    
-
     static BeginPlay()
     {
         ; 최초 프로그램 시작 대기
-        SetTimer this.WaitStartProgram, 5000
+        SetTimer(() => AppManager.WaitStartProgram(), -5000)
 
         ; 포커스 체크 딜리게이트 등록
         this.BindFocusChange()
@@ -286,23 +302,23 @@ class AppManager
     ; 최초 프로그램 시작 대기
     static WaitStartProgram()
     {
-        global checkStart
-        checkStart := true
+        this.checkStart := true
     }
 
 
     static BindFocusChange()
     {
         ; 스크립트 핸들을 등록합니다.
-        DllCall("RegisterShellHookWindow", "ptr", A_ScriptHwnd) 
+        DllCall("RegisterShellHookWindow", "ptr", A_ScriptHwnd)
 
         ; SHELLHOOK 메시지를 수신합니다.
-        OnMessage(DllCall("RegisterWindowMessage", "str", "SHELLHOOK"), this.ShellHook) 
+        OnMessage(DllCall("RegisterWindowMessage", "str", "SHELLHOOK"), ObjBindMethod(this, "ShellHook")) 
     }
 
     ; 포커스 변경됨
     static ShellHook(wParam, lParam, *) 
     {
+        ; ToolTip("wp:" wParam " lp:" lParam)
         ; HSHELL_RUDEAPPACTIVATED || HSHELL_WINDOWACTIVATED
         if (wParam = 0x8004 || wParam = 4) 
         { 
@@ -315,13 +331,14 @@ class AppManager
             curTitle := WinGetTitle(hwnd)
             ; ToolTip curTitle
             ; 프로그램 체크
-            this.CheckFocus(&curTitle)
+            AppManager.CheckFocus(curTitle)
         }
     }
 
     ; 타겟 프로그램 포커스 확인
-    static CheckFocus(&curTitle) 
+    static CheckFocus(curTitle) 
     {
+        ; ToolTip("curtitle: " curTitle)
         ; 현재 목표 게임인지 체크
         if(this.curTargetTitle = curTitle)
             return
@@ -331,22 +348,25 @@ class AppManager
         ; 변경되었으니 키 매핑 제거
         this.RemoveHotKey()
         ; 시트에 있는 게임인지 체크해서 활성 유무 변경
-        this.IsActive := this.FindGameName(&curTitle)
+        this.IsActive := this.FindGameName(curTitle)
+        ; ToolTip("IsActive: " this.IsActive)
+
+        ; @@ 클래스화 끝나면 제거 및 프로퍼티에 작업
         if(this.IsActive)
         {
             ; ToolTip("시트에 있음 키매핑 생성: " curTitle)
 
             processHandle := WinActive(curTitle)
             ; 키 매핑 시트 데이터 가져오기
-            this.hkInfo.hotKeyMap := this.LoadKeyData(&curTitle)
+            this.curHKInfo.hotKeyMap := this.LoadKeyData(curTitle)
 
             ; 가상키 생성
-            this.CreateHotKey(&curTitle, &this.hkInfo)
+            this.CreateHotKey(curTitle, this.curHKInfo)
             
             ; 오버레이 생성
-            this.CreateOverlay(&processHandle, &this.hkInfo)
+            this.CreateOverlay(processHandle, this.curHKInfo)
         }
-        else if(checkStart)
+        else if(this.checkStart)
         {
             ; ToolTip("dow" curTitle)
             
@@ -372,7 +392,7 @@ class AppManager
     }
 
     ; 해당 게임명에 대한 가상키 데이터 불러오기 + 기본 키 데이터
-    static LoadKeyData(&gameName)
+    static LoadKeyData(gameName)
     {
         sheetName := ""
         ; 해당 게임명 시트에 존재 확인
@@ -389,8 +409,6 @@ class AppManager
         if(sheetName = "")
             return Map()
 
-        ; 파일 경로 설정
-        ; gameSheetPath := keyDataFolder . sheetName . sheetEXT
         ; 해당 시트 데이터 불러오기
         gameKeyData := JKUtility.LoadPrioritySheetData(JKUtility.keyDataFolder, sheetName)
 
@@ -414,7 +432,7 @@ class AppManager
         return keyDataMap
     }
 
-    static FindGameName(&gameName)
+    static FindGameName(gameName)
     {
         ; 시트 이름 테이블에서 찾아보기
         for row in this.sheetNameTable
@@ -426,7 +444,7 @@ class AppManager
         return false
     }
 
-    static CreateHotKey(&curTitle, &curHKInfo)
+    static CreateHotKey(curTitle, curHKInfo)
     {
         for key, keyData in curHKInfo.hotKeyMap
         {
@@ -434,27 +452,30 @@ class AppManager
             if(keyData.type = "KEY")
             {
                 ; 핫 키 생성
-                Hotkey("$" keyData.name, this.ClickPos)
-                Hotkey("$" keyData.name " up", this.ReleaseBtn)
-                Hotkey("$" keyData.name, "On") ; 핫키 활성화
-                Hotkey("$" keyData.name " up", "On") ; 핫키 활성화
+                Hotkey("$" keyData.name, ObjBindMethod(this, "ClickPos"), "On")
+                Hotkey("$" keyData.name " up", ObjBindMethod(this, "ReleaseBtn"), "On")
+                ; Hotkey("$" keyData.name, "On") ; 핫키 활성화
+                ; Hotkey("$" keyData.name "   up", "On") ; 핫키 활성화
             }
         }
     }
 
-    static CreateOverlay(&processHandle, &curHKInfo)
+    static CreateOverlay(processHandle, curHKInfo)
     {
         if(!processHandle || processHandle = 0)
             return
         ; 창 위치 가져오기
         pos := WinGetClientPos(&outX, &outY, &outWidth, &outHeight, "ahk_id " processHandle)
 
+        /** @type {Vector2d} */
         curClientPos := Vector2d(outX, outY)
 
         ; 새 오버레이 생성
         for key, keyData in curHKInfo.hotKeyMap
         {
+            /** @type {OverlayInfo} */
             newOverlay := OverlayInfo()
+
             ; GUI 생성 | 포커스 비활성화
             newOverlay.aGUI := Gui("LastFound -Caption AlwaysOnTop +ToolWindow -Border")
 
@@ -476,7 +497,8 @@ class AppManager
             ; 오버레이 위치 업데이트
             option := "NoActivate w" weight " h15 x" cx " y" cy
             ; 설정에 따라 오버레이 활성화
-            newOverlay.SetActive(this.settings.enableOverlay, option)
+            newOverlay.SetActive(this.SETTINGS.enableOverlay, option)
+
             
             ; 오버레이 맵에 추가
             curHKInfo.overlayMap[newOverlay.aGUI.Hwnd] := newOverlay
@@ -485,7 +507,8 @@ class AppManager
 
     static RemoveHotKey()
     {
-        this.hkInfo.ClearHotKey()
+        
+        this.curHKInfo.ClearHotKey()
     }
 
     ; 해당 키 좌표 가져오기
@@ -496,14 +519,14 @@ class AppManager
         key := StrReplace(key, " up")
 
         ; 핫 키 인지 확인
-        if(!this.hkInfo.hotKeyMap.Has(key))
+        if(!this.curHKInfo.hotKeyMap.Has(key))
             return false
 
-        if(this.hkInfo.hotKeyMap[key].type != "KEY")
+        if(this.curHKInfo.hotKeyMap[key].type != "KEY")
             return false
 
         ; 해당 키 좌표 가져오기
-        pos2D := this.hkInfo.hotKeyMap[key].pos
+        pos2D := this.curHKInfo.hotKeyMap[key].pos
 
         return true
     }
@@ -534,34 +557,42 @@ class AppManager
         if(!WinActive(this.curTargetTitle))
             return
 
-        ; 해당 좌표 클릭 해제제
+        ; 해당 좌표 클릭 해제
         MouseClick('L',pos2D.x,pos2D.y, 1,2,'U')
         return                       
     }
 
     static ToggleOverlay()
     {
-        this.settings.enableOverlay := !this.settings.enableOverlay
+        this.SETTINGS.enableOverlay := !this.SETTINGS.enableOverlay
+        ToolTip(this.SETTINGS.enableOverlay " asdadawd")
 
         processHandle := WinActive(this.curTargetTitle)
 
-        if(this.settings.enableOverlay)
-            this.CreateOverlay(&processHandle, &this.hkInfo)
+        if(this.SETTINGS.enableOverlay)
+            this.CreateOverlay(processHandle, this.curHKInfo)
         else
-            this.hkInfo.ClearOverlay()
+            this.curHKInfo.ClearOverlay()
     }
 
     ; 세팅 불러오기
-    static LoadSetting(&path)
+    /**
+     * #### 설명을 입력하세요.
+     * @type {자료형} 
+     * @default null
+     * @returns {SettingData}
+     */
+    static LoadSetting(path)
     {
         jsonData := FileRead(path, "UTF-8")
         ; json map 변환 => 구조체로 변환
         mapData := jsongo._Parse(jsonData)
-        return MapToClass(&mapData, SettingData)
+
+        return MapToClass(mapData, SettingData)
     }
 
     ; 세팅 저장하기
-    static SaveSetting(&settingData, &path) 
+    static SaveSetting(settingData, path) 
     {
         jsonString := jsongo.Stringify(settingData) ; JSON 문자열로 변환
 
@@ -581,8 +612,8 @@ class AppManager
     static CloseScript()
     {
         ; 설정 저장
-        settingMap := this.settings.ToMap()
-        this.SaveSetting(&settingMap, &settingPath)
+        settingMap := this.SETTINGS.ToMap()
+        this.SaveSetting(settingMap, this.SETTING_PATH)
 
         ExitApp
     }
@@ -622,7 +653,7 @@ AppManager.BeginPlay()
 
 
 ; MARK: 활성화 입력 영역
-#HotIf AppManager.isActive
+#HotIf AppManager.IsActive
 
 ; 오버레이 토글
 ` up::AppManager.ToggleOverlay
