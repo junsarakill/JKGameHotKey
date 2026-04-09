@@ -23,7 +23,7 @@ class Vector2d {
     }
 }
 
-; 범용 사용 클래스
+/** #### 범용 사용 클래스 */
 class JKUtility {
     ; MARK: 전역 변수 단
     
@@ -125,5 +125,18 @@ class JKUtility {
             Run('*RunAs "' A_AhkPath '" /Restart "' A_ScriptFullPath '"')
             ExitApp()
         }
+    }
+
+    ; map 데이터 => 클래스 로 변경
+    static MapToClass(mapData, classType) 
+    {
+        local newClassIns := classType() ; 클래스 인스턴스 생성
+
+        for key, value in mapData {
+            if (newClassIns.HasProp(key)) 
+                newClassIns.%key% := value ; Map의 값을 클래스 속성으로 설정
+        }
+
+        return newClassIns
     }
 }
