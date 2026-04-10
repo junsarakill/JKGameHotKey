@@ -148,26 +148,26 @@ class SettingData
 }
 
 /** MARK: 스크립트 진행 구조
-* 1. 게임명 : 파일명 시트 정보 가져오기 | {@link JKUtility.LoadPrioritySheetData} => {@link AppManager.sheetNameTable}
-* 2. 포커스 체크 딜리게이트 등록 | {@link AppManager.BindFocusChange} -> {@link AppManager.ShellHook}
-* -> 포커스 체크 | {@link AppManager.CheckFocus}
-* -> 현재 매핑 게임명과 같은지 검사
-* -> 다르면 키매핑 제거 | {@link AppManager.RemoveHotKey}
-* -> 다르면 시트에 해당 게임명 있는지 검사 | {@link AppManager.FindGameName}
-*
-* 있으면 키매핑 데이터 불러오기 | {@link AppManager.LoadKeyData}
-* -> 해당 게임 키매핑 생성 | {@link AppManager.CreateHotKey}  
-* 
-* 없으면 전체 프로세스에 목표 게임 존재 체크
-* -> 없으면 스크립트 종료
-* 
-* 3. 가상키 누르기 | {@link  AppManager.ClickPos}
-* -> 해당 키 좌표 가져오기 | {@link  AppManager.GetKeyPos}
-* -> 해당 좌표 클릭 | {@link AppManager.MouseClick}
-* -> 가상키 떼기 | {@link AppManager.ReleaseBtn}
-* -> 이하 같음
-* 
-*/
+ * 1. 게임명 : 파일명 시트 정보 가져오기 | {@link JKUtility.LoadPrioritySheetData} => {@link AppManager.sheetNameTable}
+ * 2. 포커스 체크 딜리게이트 등록 | {@link AppManager.BindFocusChange} -> {@link AppManager.ShellHook}
+ * -> 포커스 체크 | {@link AppManager.CheckFocus}
+ * -> 현재 매핑 게임명과 같은지 검사
+ * -> 다르면 키매핑 제거 | {@link AppManager.RemoveHotKey}
+ * -> 다르면 시트에 해당 게임명 있는지 검사 | {@link AppManager.FindGameName}
+ *
+ * 있으면 키매핑 데이터 불러오기 | {@link AppManager.LoadKeyData}
+ * -> 해당 게임 키매핑 생성 | {@link AppManager.CreateHotKey}  
+ * 
+ * 없으면 전체 프로세스에 목표 게임 존재 체크
+ * -> 없으면 스크립트 종료
+ * 
+ * 3. 가상키 누르기 | {@link  AppManager.ClickPos}
+ * -> 해당 키 좌표 가져오기 | {@link  AppManager.GetKeyPos}
+ * -> 해당 좌표 클릭 | {@link AppManager.MouseClick}
+ * -> 가상키 떼기 | {@link AppManager.ReleaseBtn}
+ * -> 이하 같음
+ * 
+ */
 
 /**
  * #### 스크립트 총괄 클래스
@@ -513,7 +513,13 @@ class AppManager
         }
     }
 
-    ; @@ 여기부터 다시 작업
+    /**
+     * #### 가상키 오버레이 생성
+     * *
+     * @param {Number} processHandle - 적용할 프로세스 값
+     * @param {HotKeyInfo} curHKInfo - 가상키 데이터
+     * @returns {void}
+     */
     static CreateOverlay(processHandle, curHKInfo)
     {
         if(!processHandle || processHandle = 0)
@@ -559,13 +565,23 @@ class AppManager
         }
     }
 
+    /**
+     * #### 현재 가상키 전체 제거
+     * *
+     * @returns {void}
+     */
     static RemoveHotKey()
     {
-        
         this.curHKInfo.ClearHotKey()
     }
 
-    ; 해당 키 좌표 가져오기
+    /**
+     * #### 해당 키 좌표 가져오기
+     * *
+     * @param {Vector2d} pos2D - 해당 가상키 좌표
+     * @param {String} key - 키 이름
+     * @returns {Bool} - 가져오기 성공 유무
+     */
     static GetKeyPos(&pos2D, key)
     {
         ; $ 잘라내기
@@ -585,7 +601,13 @@ class AppManager
         return true
     }
 
-    ; 클릭 : 입력 가능 시만
+    /**
+     * #### 클릭 이벤트 : 입력 가능시
+     * *
+     * @see AppManager.CreateHotKey - 바인딩 위치
+     * @param {String} hotKey - 키 이름
+     * @returns {void}
+     */
     static ClickPos(hotKey)
     {
         ; 좌표 가져오기 및 입력 체크| 입력 불가시 return
@@ -601,6 +623,13 @@ class AppManager
         return
     }
 
+    /**
+     * #### 릴리스 이벤트 : 입력 가능시
+     * *
+     * @see AppManager.CreateHotKey - 바인딩 위치
+     * @param {String} hotKey - 키 이름
+     * @returns {void}
+     */
     static ReleaseBtn(hotKey)
     {   
         ; 좌표 가져오기 및 입력 체크| 입력 불가시 return
@@ -616,6 +645,11 @@ class AppManager
         return                       
     }
 
+    /**
+     * #### 오버레이 토글
+     * *
+     * @returns {void}
+     */
     static ToggleOverlay()
     {
         this.SETTINGS.enableOverlay := !this.SETTINGS.enableOverlay
@@ -629,7 +663,12 @@ class AppManager
             this.curHKInfo.ClearOverlay()
     }
 
-    ; 세팅 불러오기
+    /**
+     * #### 설정 불러오기
+     * *
+     * @param {String} path - 설정 파일 경로
+     * @returns {SettingData} - 설정 데이터
+     */
     static LoadSetting(path)
     {
         jsonData := FileRead(path, "UTF-8")
@@ -639,7 +678,13 @@ class AppManager
         return JKUtility.MapToClass(mapData, SettingData)
     }
 
-    ; 세팅 저장하기
+    /**
+     * #### 설정 저장하기
+     * *
+     * @param {SettingData} settingData - 설정 데이터
+     * @param {String} path - 설정 파일 경로
+     * @returns {void}
+     */
     static SaveSetting(settingData, path) 
     {
         jsonString := jsongo.Stringify(settingData) ; JSON 문자열로 변환
@@ -656,7 +701,11 @@ class AppManager
         file.Close() ; 파일 닫기
     }
 
-    ; 스크립트 종료
+    /**
+     * #### 스크립트 종료
+     * *
+     * @returns {void}
+     */
     static CloseScript()
     {
         ; 설정 저장
@@ -703,7 +752,7 @@ AppManager.BeginPlay()
 ; MARK: 활성화 입력 영역
 #HotIf AppManager.IsActive
 
-; 오버레이 토글
+; 오버레이 토글 키
 ` up::AppManager.ToggleOverlay
 
 ; 현재 게임 기본 위치로
