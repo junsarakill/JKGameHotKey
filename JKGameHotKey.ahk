@@ -31,12 +31,28 @@ class KeyData
 
 class HotKeyInfo
 {
-    ; 키 데이터 맵 | key, keyInfo
+    /**
+     * #### 가상키 데이터 맵
+     * @type {Map} 
+     * @default null
+     * @example for key, keyData in this.hotKeyMap
+     */
     hotKeyMap := Map()
-    ; 오버레이 맵 | gui Hwnd, overlayInfo
+
+    /**
+     * #### 가상키 오버레이 맵
+     * @type {Map} 
+     * @default null
+     * @example for guiHwnd , overlayInfo in this.overlayMap
+     */
     overlayMap := Map()
 
-    ; 핫키 초기화
+    /**
+     * #### 가상키 초기화
+     * *
+     * @description 가상키 비활성화, 오버레이 gui 제거, 맵 초기화
+     * @returns {void}
+     */
     ClearHotKey()
     {
         ; 핫키 제거
@@ -47,30 +63,25 @@ class HotKeyInfo
             {                               
                 Hotkey("$" keyData.name, "Off") ; 핫키 비활성화
                 Hotkey("$" keyData.name " up", "Off") ; 핫키 비활성화
-                ; Hotkey("$" keyData.name, "") ; 핫키를 빈 문자열로 설정하여 제거
-                ; Hotkey("$" keyData.name " up", "") ; 핫키를 빈 문자열로 설정하여 제거       
             }
         }                                   
+        
+        this.hotKeyMap := Map()
 
         ; 오버레이 제거
-        for hwnd, info in this.overlayMap
-        {
-            info.Destroy()
-        }
-
-        this.hotKeyMap := Map()
-        this.overlayMap := Map()    
+        this.ClearOverlay()
     }
 
-    ; 오버레이 초기화
     /**
-     * 
+     * #### 오버레이 초기화
+     * *
+     * @returns {void}
      */
     ClearOverlay()
     {
-        for key, value in this.overlayMap
+        for hwnd, info in this.overlayMap
         {
-            value.Destroy()
+            info.Destroy()
         }
 
         this.overlayMap := Map()
@@ -84,11 +95,17 @@ class OverlayInfo
 {
     /** @type {Vector2d} */
     pos := Vector2d()
+
     /** @type {Gui} */
     aGUI := Gui()
+
+    /** @type {String} */
     text := "?"
+
+    /** @type {Bool} */
     isVisible := false
 
+    /** @type {String} */
     prevOption := ""
 
     /**
@@ -102,6 +119,13 @@ class OverlayInfo
         this.text := text
     }
 
+    /**
+     * #### 오버레이 활성화 여부 설정
+     * *
+     * @param {Bool} value - 활성화 여부
+     * @param {String} option - gui 옵션
+     * @returns {void}
+     */
     SetActive(value := true, option := "")
     {
         if(value)
@@ -121,14 +145,18 @@ class OverlayInfo
         this.isVisible := value
     }
 
-    ; 오버레이 제거
+    /**
+     * #### 오버레이 제거
+     * *
+     * @returns {void}
+     */
     Destroy() {
-        this.aGUI.Destroy() ; GUI 닫기
+        this.aGUI.Destroy()
     }
 
     ; 소멸자
     __Delete() {
-        this.Destroy() ; 오버레이 제거 메서드 호출
+        this.Destroy()
     }
 }
 
