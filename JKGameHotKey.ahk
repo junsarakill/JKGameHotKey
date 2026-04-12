@@ -9,11 +9,24 @@
 /** 가상키 데이터 */
 class KeyData
 {
+    /** @type {String} */
     name := ""
+
+    /** @type {Vector2d} */
     pos := Vector2d()
+
+    /** @type {String} */
     type := ""
+
+    /** @type {String} */
     description := ""
 
+    /**
+     * #### 생성자
+     * *
+     * @param {Map} sheetDataMap - 가상키 데이터 시트 맵 | 헤더 name, x, y, type, description
+     * @returns {void}
+     */
     __New(sheetDataMap)
     {
         this.name := sheetDataMap["name"]
@@ -22,6 +35,11 @@ class KeyData
         this.description := sheetDataMap["description"]
     }
 
+    /**
+     * #### 클래스 데이터 출력
+     * *
+     * @returns {String} - 
+     */
     ToString()
     {
         return Format("name : {1}, pos : {2}, type : {3}, desc : {4}"
@@ -163,6 +181,7 @@ class OverlayInfo
 ; 설정 구조체
 class SettingData
 {
+    /** @type {Bool} */
     enableOverlay := true
 
     ToMap()
@@ -176,6 +195,7 @@ class SettingData
 }
 
 /** MARK: 스크립트 진행 구조
+ * 0. 스크립트 시작 | {@link AppManager.BeginPlay}
  * 1. 게임명 : 파일명 시트 정보 가져오기 | {@link JKUtility.LoadPrioritySheetData} => {@link AppManager.sheetNameTable}
  * 2. 포커스 체크 딜리게이트 등록 | {@link AppManager.BindFocusChange} -> {@link AppManager.ShellHook}
  * -> 포커스 체크 | {@link AppManager.CheckFocus}
@@ -187,13 +207,12 @@ class SettingData
  * -> 해당 게임 키매핑 생성 | {@link AppManager.CreateHotKey}  
  * 
  * 없으면 전체 프로세스에 목표 게임 존재 체크
- * -> 없으면 스크립트 종료
+ * -> 없으면 스크립트 종료 {@link AppManager.CloseScript}
  * 
  * 3. 가상키 누르기 | {@link  AppManager.ClickPos}
  * -> 해당 키 좌표 가져오기 | {@link  AppManager.GetKeyPos}
  * -> 해당 좌표 클릭 | {@link AppManager.MouseClick}
  * -> 가상키 떼기 | {@link AppManager.ReleaseBtn}
- * -> 이하 같음
  * 
  */
 
@@ -211,35 +230,35 @@ class AppManager
      */
     static SETTING_PATH => A_ScriptDir . "\Setting.ini"
 
+    /** @type {SettingData} */
+    static _settings := this.LoadSetting(this.SETTING_PATH) 
     /**
      * #### 설정 데이터
      * @type {SettingData} 
      * @readonly
     */
-    static _settings := this.LoadSetting(this.SETTING_PATH) 
-    /** @type {SettingData} */
     static SETTINGS => this._settings
 
     /**
      * #### 기본 가상키 파일명
      * @type {String} 
+     * @readonly
      */
-    static defaultKeySheetName := "JK_DefaultKeyData"
-    ; defaultKeySheetPath := keyDataFolder . defaultKeySheetName
+    static DEFAULT_KEY_SHEET_NAME => "JK_DefaultKeyData"
 
     /**
      * #### 게임명 : 파일명 시트 파일명
      * @type {String} 
+     * @readonly
      */
-    static keySheetName := "JK_AHK_SheetNameKey"
-    ; keySheetPath := sheetFolder . keySheetName
+    static KEY_SHEET_NAME => "JK_AHK_SheetNameKey"
 
     /**
      * #### 게임명 : 파일명 정보 구조체 | 배열 { 맵[헤더] : 값 }
      * @type {Array} 
      * @default Ary[Map[Header]:value]
      */
-    static sheetNameTable := JKUtility.LoadPrioritySheetData(JKUtility.sheetFolder, this.keySheetName)
+    static sheetNameTable := JKUtility.LoadPrioritySheetData(JKUtility.sheetFolder, this.KEY_SHEET_NAME)
 
     /**
      * #### 현재 목표 게임명
@@ -249,7 +268,7 @@ class AppManager
     static curTargetTitle := ""
 
     /**
-     * #### 가상키 데이터
+     * #### 전체 가상키 데이터
      * @type {HotKeyInfo} 
      * @default null
      */
@@ -478,7 +497,7 @@ class AppManager
 
         gameKeyData := JKUtility.LoadPrioritySheetData(JKUtility.keyDataFolder, sheetName)
 
-        defaultKeyData := JKUtility.LoadPrioritySheetData(JKUtility.keyDataFolder, this.defaultKeySheetName)
+        defaultKeyData := JKUtility.LoadPrioritySheetData(JKUtility.keyDataFolder, this.DEFAULT_KEY_SHEET_NAME)
 
         ; 결합
         fullKeyData := []
