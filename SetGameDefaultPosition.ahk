@@ -1,15 +1,29 @@
 ﻿#Requires AutoHotkey v2.0
 #Include Utility.ahk
 
-; 클래스 영역
+; MARK: 클래스 영역
 
-; 게임명 : 기본 위치 데이터
+/** 게임명 : 기본 위치 데이터 */
 class PosData
 {
-    name := "" ; string
-    pos := "" ; vector2d
+    /** @type {String} */
+    name := ""
+
+    /** @type {Vector2d} */
+    pos := ""
+
+    /** @type {Number} */
     monitor := 0
 
+    /**
+     * #### 생성자
+     * *
+     * @param {String} name - 프로세스 창 이름
+     * @param {Number} x - x 좌표
+     * @param {Number} y - y 좌표
+     * @param {Number} monitor - 모니터 번호
+     * @returns {void}
+     */
     __New(name := "", x := 0, y := 0, monitor := 0)
     {
         this.name := name
@@ -22,14 +36,35 @@ class SetGameDefaultPosition
 {
     ; MARK: 변수 영역
 
-    ; 기본 위치 시트 경로
-    static defaultPosSheetName := "JK_GameDefaultPosition.csv"
-    static defaultPosSheetPath := JKUtility.sheetFolder . this.defaultPosSheetName
+    /** @type {String} */
+    static _defaultPosSheetName := "JK_GameDefaultPosition" . JKUtility.SHEET_EXT
+    /** @type {String} */
+    static DEFAULT_POS_SHEET_NAME => this._defaultPosSheetName
+    
+    /** @type {String} */
+    static _defaultPosSheetPath := JKUtility.SHEET_FOLDER . this.DEFAULT_POS_SHEET_NAME
+    /**
+     * #### 기본 위치 시트 경로
+     * @type {String} 
+     */
+    static DEFAULT_POS_SHEET_PATH => this._defaultPosSheetPath
 
-    ;기본 위치 데이터 | PosData 배열
-    static defaultPosData := this.LoadDefaultPosSheetData(this.defaultPosSheetPath)
+    /** @type {Array} */
+    static _defaultPosData := this.LoadDefaultPosSheetData(this.DEFAULT_POS_SHEET_PATH)
+    /**
+     * #### 기본 위치 데이터
+     * @type {Array} - Array{PosData} 
+     */
+    static DEFAULT_POS_DATA => this._defaultPosData
 
-    ; 기본 위치 시트 데이터 PosData 구조체 배열로 변환
+    ; MARK: 함수 영역
+
+    /**
+     * #### 기본 위치 시트 데이터 PosData 클래스 배열로 변환
+     * *
+     * @param {String} defaultPosSheetPath - 시트 경로
+     * @returns {Array} - Array{PosData}
+     */
     static LoadDefaultPosSheetData(defaultPosSheetPath)
     {
         ; 맵 변환한 시트 데이터 배열
@@ -39,6 +74,7 @@ class SetGameDefaultPosition
         posDataAry := []
         for oneData in dataAry
         {
+            ; @@ map to class 함수 사용 필요
             onePosData := PosData(oneData["name"], oneData["x"], oneData["y"], oneData["monitor"])
 
             posDataAry.Push(onePosData)
@@ -47,7 +83,12 @@ class SetGameDefaultPosition
         return posDataAry
     }
 
-    ; 위치 데이터 받아서 시트에 있는 기본 위치로 창 옮기기
+    /**
+     * #### 위치 데이터 받아서 기본 위치로 창 옮기기
+     * *
+     * @param {PosData} posData - 위치 데이터
+     * @returns {void}
+     */
     static SetDefaultPosition(posData)
     {
         /** geminai said / 26.02.19
@@ -71,10 +112,14 @@ class SetGameDefaultPosition
         }
     }
 
-    ; 시트내 모든 게임에 위치 변경
+    /**
+     * #### 기본 위치 있는 모든 게임 위치로
+     * *
+     * @returns {void}
+     */
     static RunSetGameDefaultPosition()
     {
-        for posData in this.defaultPosData
+        for posData in this.DEFAULT_POS_DATA
         {
             this.SetDefaultPosition(posData)
         }

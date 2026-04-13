@@ -27,7 +27,7 @@ class KeyData
      * @param {Map} sheetDataMap - 가상키 데이터 시트 맵 | 헤더 name, x, y, type, description
      * @returns {void}
      */
-    __New(sheetDataMap)
+    __New(sheetDataMap := [])
     {
         this.name := sheetDataMap["name"]
         this.pos := Vector2d(sheetDataMap["x"], sheetDataMap["y"])
@@ -258,7 +258,7 @@ class AppManager
      * @type {Array} 
      * @default Ary[Map[Header]:value]
      */
-    static sheetNameTable := JKUtility.LoadPrioritySheetData(JKUtility.sheetFolder, this.KEY_SHEET_NAME)
+    static sheetNameTable := JKUtility.LoadPrioritySheetData(JKUtility.SHEET_FOLDER, this.KEY_SHEET_NAME)
 
     /**
      * #### 현재 목표 게임명
@@ -495,9 +495,9 @@ class AppManager
         if(sheetName = false)
             return Map()
 
-        gameKeyData := JKUtility.LoadPrioritySheetData(JKUtility.keyDataFolder, sheetName)
+        gameKeyData := JKUtility.LoadPrioritySheetData(JKUtility.KEY_DATA_FOLDER, sheetName)
 
-        defaultKeyData := JKUtility.LoadPrioritySheetData(JKUtility.keyDataFolder, this.DEFAULT_KEY_SHEET_NAME)
+        defaultKeyData := JKUtility.LoadPrioritySheetData(JKUtility.KEY_DATA_FOLDER, this.DEFAULT_KEY_SHEET_NAME)
 
         ; 결합
         fullKeyData := []
