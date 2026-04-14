@@ -9,12 +9,25 @@
 /** 가상키 데이터 */
 class KeyData
 {
+    /** @type {String} */
     name := ""
+
+    /** @type {Vector2d} */
     pos := Vector2d()
+
+    /** @type {String} */
     type := ""
+
+    /** @type {String} */
     description := ""
 
-    __New(sheetDataMap)
+    /**
+     * #### 생성자
+     * *
+     * @param {Map} sheetDataMap - 가상키 데이터 시트 맵 | 헤더 name, x, y, type, description
+     * @returns {void}
+     */
+    __New(sheetDataMap := [])
     {
         this.name := sheetDataMap["name"]
         this.pos := Vector2d(sheetDataMap["x"], sheetDataMap["y"])
@@ -22,6 +35,11 @@ class KeyData
         this.description := sheetDataMap["description"]
     }
 
+    /**
+     * #### 클래스 데이터 출력
+     * *
+     * @returns {String} - 
+     */
     ToString()
     {
         return Format("name : {1}, pos : {2}, type : {3}, desc : {4}"
@@ -31,12 +49,28 @@ class KeyData
 
 class HotKeyInfo
 {
-    ; 키 데이터 맵 | key, keyInfo
+    /**
+     * #### 가상키 데이터 맵
+     * @type {Map} 
+     * @default null
+     * @example for key, keyData in this.hotKeyMap
+     */
     hotKeyMap := Map()
-    ; 오버레이 맵 | gui Hwnd, overlayInfo
+
+    /**
+     * #### 가상키 오버레이 맵
+     * @type {Map} 
+     * @default null
+     * @example for guiHwnd , overlayInfo in this.overlayMap
+     */
     overlayMap := Map()
 
-    ; 핫키 초기화
+    /**
+     * #### 가상키 초기화
+     * *
+     * @description 가상키 비활성화, 오버레이 gui 제거, 맵 초기화
+     * @returns {void}
+     */
     ClearHotKey()
     {
         ; 핫키 제거
@@ -47,30 +81,25 @@ class HotKeyInfo
             {                               
                 Hotkey("$" keyData.name, "Off") ; 핫키 비활성화
                 Hotkey("$" keyData.name " up", "Off") ; 핫키 비활성화
-                ; Hotkey("$" keyData.name, "") ; 핫키를 빈 문자열로 설정하여 제거
-                ; Hotkey("$" keyData.name " up", "") ; 핫키를 빈 문자열로 설정하여 제거       
             }
         }                                   
+        
+        this.hotKeyMap := Map()
 
         ; 오버레이 제거
-        for hwnd, info in this.overlayMap
-        {
-            info.Destroy()
-        }
-
-        this.hotKeyMap := Map()
-        this.overlayMap := Map()    
+        this.ClearOverlay()
     }
 
-    ; 오버레이 초기화
     /**
-     * 
+     * #### 오버레이 초기화
+     * *
+     * @returns {void}
      */
     ClearOverlay()
     {
-        for key, value in this.overlayMap
+        for hwnd, info in this.overlayMap
         {
-            value.Destroy()
+            info.Destroy()
         }
 
         this.overlayMap := Map()
@@ -84,11 +113,17 @@ class OverlayInfo
 {
     /** @type {Vector2d} */
     pos := Vector2d()
+
     /** @type {Gui} */
     aGUI := Gui()
+
+    /** @type {String} */
     text := "?"
+
+    /** @type {Bool} */
     isVisible := false
 
+    /** @type {String} */
     prevOption := ""
 
     /**
@@ -102,6 +137,13 @@ class OverlayInfo
         this.text := text
     }
 
+    /**
+     * #### 오버레이 활성화 여부 설정
+     * *
+     * @param {Bool} value - 활성화 여부
+     * @param {String} option - gui 옵션
+     * @returns {void}
+     */
     SetActive(value := true, option := "")
     {
         if(value)
@@ -121,20 +163,25 @@ class OverlayInfo
         this.isVisible := value
     }
 
-    ; 오버레이 제거
+    /**
+     * #### 오버레이 제거
+     * *
+     * @returns {void}
+     */
     Destroy() {
-        this.aGUI.Destroy() ; GUI 닫기
+        this.aGUI.Destroy()
     }
 
     ; 소멸자
     __Delete() {
-        this.Destroy() ; 오버레이 제거 메서드 호출
+        this.Destroy()
     }
 }
 
 ; 설정 구조체
 class SettingData
 {
+    /** @type {Bool} */
     enableOverlay := true
 
     ToMap()
@@ -147,47 +194,34 @@ class SettingData
     }
 }
 
-; MARK: 전역 함수 단
-
-; map 데이터 => 클래스 로 변경
-MapToClass(mapData, classType) 
-{
-    local newClassIns := classType() ; 클래스 인스턴스 생성
-
-    for key, value in mapData {
-        if (newClassIns.HasOwnProp(key)) {
-            newClassIns.%key% := value ; Map의 값을 클래스 속성으로 설정
-        }
-    }
-
-    return newClassIns
-}
-
 /** MARK: 스크립트 진행 구조
-* 1. 게임명 : 파일명 시트 정보 가져오기 | {@link JKUtility.LoadPrioritySheetData} => {@link AppManager.sheetNameTable}
-* 2. 포커스 체크 딜리게이트 등록 | BindFocusChange -> ShellHook
-* -> 포커스 체크 | CheckFocus
-* -> 현재 매핑 게임명과 같은지 검사
-* -> 다르면 키매핑 제거 | RemoveHotKey
-* -> 다르면 시트에 해당 게임명 있는지 검사 | {@link AppManager.FindGameName}
-* 있으면 키매핑 데이터 불러오기 | LoadKeyData
--> 해당 게임 키매핑 생성 | {@link AppManager.CreateHotKey}  
-* 
-* 없으면 전체 프로세스에 목표 게임 존재 체크
-* -> 없으면 스크립트 종료
-* 
-* 3. 가상키 누르기 | ClickPos
-* -> 해당 키 좌표 가져오기 | GetKeyPos
-* -> 해당 좌표 클릭 | MouseClick
-* -> 가상키 떼기 | ReleaseBtn
-* -> 이하 같음
-* 
-*/
+ * 0. 스크립트 시작 | {@link AppManager.BeginPlay}
+ * 1. 게임명 : 파일명 시트 정보 가져오기 | {@link JKUtility.LoadPrioritySheetData} => {@link AppManager.sheetNameTable}
+ * 2. 포커스 체크 딜리게이트 등록 | {@link AppManager.BindFocusChange} -> {@link AppManager.ShellHook}
+ * -> 포커스 체크 | {@link AppManager.CheckFocus}
+ * -> 현재 매핑 게임명과 같은지 검사
+ * -> 다르면 키매핑 제거 | {@link AppManager.RemoveHotKey}
+ * -> 다르면 시트에 해당 게임명 있는지 검사 | {@link AppManager.FindGameName}
+ *
+ * 있으면 키매핑 데이터 불러오기 | {@link AppManager.LoadKeyData}
+ * -> 해당 게임 키매핑 생성 | {@link AppManager.CreateHotKey}  
+ * 
+ * 없으면 전체 프로세스에 목표 게임 존재 체크
+ * -> 없으면 스크립트 종료 {@link AppManager.CloseScript}
+ * 
+ * 3. 가상키 누르기 | {@link  AppManager.ClickPos}
+ * -> 해당 키 좌표 가져오기 | {@link  AppManager.GetKeyPos}
+ * -> 해당 좌표 클릭 | {@link AppManager.MouseClick}
+ * -> 가상키 떼기 | {@link AppManager.ReleaseBtn}
+ * 
+ */
 
-; FIXME 클래스화 중
+/**
+ * #### 스크립트 총괄 클래스
+ */
 class AppManager 
 {
-    ; MARK: 전역 변수 영역
+    ; MARK: 변수 영역
 
     /**
      * #### 설정 json 파일
@@ -196,34 +230,55 @@ class AppManager
      */
     static SETTING_PATH => A_ScriptDir . "\Setting.ini"
 
+    /** @type {SettingData} */
+    static _settings := this.LoadSetting(this.SETTING_PATH) 
     /**
      * #### 설정 데이터
      * @type {SettingData} 
      * @readonly
     */
-    static _settings := this.LoadSetting(this.SETTING_PATH) 
-    /** @type {SettingData} */
     static SETTINGS => this._settings
 
-    ; 기본 가상키 데이터
-    static defaultKeySheetName := "JK_DefaultKeyData"
-    ; defaultKeySheetPath := keyDataFolder . defaultKeySheetName
+    /**
+     * #### 기본 가상키 파일명
+     * @type {String} 
+     * @readonly
+     */
+    static DEFAULT_KEY_SHEET_NAME => "JK_DefaultKeyData"
 
-    ; 게임명 : 파일명 시트 경로
-    static keySheetName := "JK_AHK_SheetNameKey"
-    ; keySheetPath := sheetFolder . keySheetName
+    /**
+     * #### 게임명 : 파일명 시트 파일명
+     * @type {String} 
+     * @readonly
+     */
+    static KEY_SHEET_NAME => "JK_AHK_SheetNameKey"
 
-    ; 게임명 : 파일명 정보 구조체 | 배열 { 맵[헤더] : 값 }
-    static sheetNameTable := JKUtility.LoadPrioritySheetData(JKUtility.sheetFolder, this.keySheetName)
+    /**
+     * #### 게임명 : 파일명 정보 구조체 | 배열 { 맵[헤더] : 값 }
+     * @type {Array} 
+     * @default Ary[Map[Header]:value]
+     */
+    static sheetNameTable := JKUtility.LoadPrioritySheetData(JKUtility.SHEET_FOLDER, this.KEY_SHEET_NAME)
 
-    ; 현재 목표 게임명
+    /**
+     * #### 현재 목표 게임명
+     * @type {String} 
+     * @default null
+     */
     static curTargetTitle := ""
 
-    ; 가상키 데이터
-    /** @type {HotKeyInfo} */
+    /**
+     * #### 전체 가상키 데이터
+     * @type {HotKeyInfo} 
+     * @default null
+     */
     static curHKInfo := HotKeyInfo()
 
-    ; 시작 대기 여부
+    /**
+     * #### 스크립트 시작 대기 여부
+     * @type {Bool} 
+     * @default false
+     */
     static checkStart := false
 
     /** 
@@ -234,8 +289,13 @@ class AppManager
      */
     static overlayOpacity := 100
 
-    ; 핫키 활성 여부
+    /** @private */
     static _isActive := false
+    /**
+     * #### 핫키 활성 여부
+     * @type {Bool} 
+     * @default false
+     */
     static IsActive {
         get => this._isActive
         set {
@@ -257,7 +317,7 @@ class AppManager
             this.curHKInfo.hotKeyMap := this.LoadKeyData(this.curTargetTitle)
 
             ; 가상키 생성
-            this.CreateHotKey(this.curTargetTitle, this.curHKInfo)
+            this.CreateHotKey(this.curHKInfo)
             
             ; 오버레이 생성
             this.CreateOverlay(processHandle, this.curHKInfo)
@@ -288,8 +348,13 @@ class AppManager
     }
     
 
-    ; 함수 영역
+    ; MARK: 함수 영역
 
+    /**
+     * #### 스크립트 시작 준비
+     * *
+     * @returns {void}
+     */
     static BeginPlay()
     {
         ; 최초 프로그램 시작 대기
@@ -299,13 +364,23 @@ class AppManager
         this.BindFocusChange()
     }
 
-    ; 최초 프로그램 시작 대기
+    /**
+     * #### 스크립트 시작 대기
+     * *
+     * @returns {void}
+     */
+    
     static WaitStartProgram()
     {
         this.checkStart := true
     }
 
-
+    /**
+     * #### 딜리게이트 바인드
+     * *
+     * @returns {void}
+     */
+    
     static BindFocusChange()
     {
         ; 스크립트 핸들을 등록합니다.
@@ -316,9 +391,19 @@ class AppManager
     }
 
     ; 포커스 변경됨
+    /**
+     * #### 윈도우 포커스 변경시 작동
+     * *
+     * @see AppManager.BindFocusChange - 바인딩 위치
+     * @param {Number} wParam - 이벤트 식별값
+     * @param {Number} lParam - 창 핸들
+     * @param {*} _ - 미사용 나머지
+     * @returns {void}
+     */
     static ShellHook(wParam, lParam, *) 
     {
         ; ToolTip("wp:" wParam " lp:" lParam)
+
         ; HSHELL_RUDEAPPACTIVATED || HSHELL_WINDOWACTIVATED
         if (wParam = 0x8004 || wParam = 4) 
         { 
@@ -330,12 +415,17 @@ class AppManager
 
             curTitle := WinGetTitle(hwnd)
             ; ToolTip curTitle
-            ; 프로그램 체크
+
             AppManager.CheckFocus(curTitle)
         }
     }
 
-    ; 타겟 프로그램 포커스 확인
+    /**
+     * #### 타겟 프로그램 포커스 확인
+     * @description 확인 후 스크립트 활성 또는 종료 여부 판단
+     * @param {String} curTitle - 현재 포커스된 창 이름
+     * @returns {void}
+     */
     static CheckFocus(curTitle) 
     {
         ; ToolTip("curtitle: " curTitle)
@@ -348,8 +438,7 @@ class AppManager
         ; 변경되었으니 키 매핑 제거
         this.RemoveHotKey()
         ; 시트에 있는 게임인지 체크해서 활성 유무 변경
-        this.IsActive := this.FindGameName(curTitle)
-        ; ToolTip("IsActive: " this.IsActive)
+        this.IsActive := this.FindSheetName(curTitle)
 
         ; @@ 클래스화 끝나면 제거 및 프로퍼티에 작업
         if(this.IsActive)
@@ -361,7 +450,7 @@ class AppManager
             this.curHKInfo.hotKeyMap := this.LoadKeyData(curTitle)
 
             ; 가상키 생성
-            this.CreateHotKey(curTitle, this.curHKInfo)
+            this.CreateHotKey(this.curHKInfo)
             
             ; 오버레이 생성
             this.CreateOverlay(processHandle, this.curHKInfo)
@@ -391,29 +480,24 @@ class AppManager
         }
     }
 
-    ; 해당 게임명에 대한 가상키 데이터 불러오기 + 기본 키 데이터
+    /**
+     * #### 해당 게임명에 대한 가상키 데이터 불러오기 + 기본 키 데이터
+     * *
+     * @param {String} gameName - 게임명
+     * @returns {Map} - 가상키 데이터 맵
+     */
     static LoadKeyData(gameName)
     {
-        sheetName := ""
-        ; 해당 게임명 시트에 존재 확인
-        for row in this.sheetNameTable
-        {
-            ; 존재하면 시트명 가져오기
-            if(row["gameName"] = gameName)
-            {
-                sheetName := row["sheetName"]
-                break
-            }
-        }
+        ; 게임명 시트에 존재 확인
+        sheetName := this.FindSheetName(gameName)
+
         ; 비 존재시 함수 종료
-        if(sheetName = "")
+        if(sheetName = false)
             return Map()
 
-        ; 해당 시트 데이터 불러오기
-        gameKeyData := JKUtility.LoadPrioritySheetData(JKUtility.keyDataFolder, sheetName)
+        gameKeyData := JKUtility.LoadPrioritySheetData(JKUtility.KEY_DATA_FOLDER, sheetName)
 
-        ; 기본 키 데이터 불러오기
-        defaultKeyData := JKUtility.LoadPrioritySheetData(JKUtility.keyDataFolder, this.defaultKeySheetName)
+        defaultKeyData := JKUtility.LoadPrioritySheetData(JKUtility.KEY_DATA_FOLDER, this.DEFAULT_KEY_SHEET_NAME)
 
         ; 결합
         fullKeyData := []
@@ -431,20 +515,38 @@ class AppManager
         ; 가상키 데이터 맵 반환
         return keyDataMap
     }
-
-    static FindGameName(gameName)
+    
+    /**
+     * #### 게임명으로 가상키 시트 파일명 찾기
+     * @description 부가기능으로 해당 게임명이 시트에 존재하는지 확인 가능
+     * *
+     * @param {String} gameName - 게임명
+     * @returns {String} - 시트 파일명
+     */
+    static FindSheetName(gameName)
     {
+        sheetName := ""
+
         ; 시트 이름 테이블에서 찾아보기
         for row in this.sheetNameTable
         {
             if(row["gameName"] = gameName)
-                return true
+            {
+                sheetName := row["sheetName"]
+                break
+            }
         }
 
-        return false
+        return sheetName
     }
 
-    static CreateHotKey(curTitle, curHKInfo)
+    /**
+     * #### 가상키 생성
+     * *
+     * @param {HotKeyInfo} curHKInfo - 가상키 데이터
+     * @returns {void}
+     */
+    static CreateHotKey(curHKInfo)
     {
         for key, keyData in curHKInfo.hotKeyMap
         {
@@ -454,12 +556,17 @@ class AppManager
                 ; 핫 키 생성
                 Hotkey("$" keyData.name, ObjBindMethod(this, "ClickPos"), "On")
                 Hotkey("$" keyData.name " up", ObjBindMethod(this, "ReleaseBtn"), "On")
-                ; Hotkey("$" keyData.name, "On") ; 핫키 활성화
-                ; Hotkey("$" keyData.name "   up", "On") ; 핫키 활성화
             }
         }
     }
 
+    /**
+     * #### 가상키 오버레이 생성
+     * *
+     * @param {Number} processHandle - 적용할 프로세스 값
+     * @param {HotKeyInfo} curHKInfo - 가상키 데이터
+     * @returns {void}
+     */
     static CreateOverlay(processHandle, curHKInfo)
     {
         if(!processHandle || processHandle = 0)
@@ -505,13 +612,23 @@ class AppManager
         }
     }
 
+    /**
+     * #### 현재 가상키 전체 제거
+     * *
+     * @returns {void}
+     */
     static RemoveHotKey()
     {
-        
         this.curHKInfo.ClearHotKey()
     }
 
-    ; 해당 키 좌표 가져오기
+    /**
+     * #### 해당 키 좌표 가져오기
+     * *
+     * @param {Vector2d} pos2D - 해당 가상키 좌표
+     * @param {String} key - 키 이름
+     * @returns {Bool} - 가져오기 성공 유무
+     */
     static GetKeyPos(&pos2D, key)
     {
         ; $ 잘라내기
@@ -531,7 +648,13 @@ class AppManager
         return true
     }
 
-    ; 클릭 : 입력 가능 시만
+    /**
+     * #### 클릭 이벤트 : 입력 가능시
+     * *
+     * @see AppManager.CreateHotKey - 바인딩 위치
+     * @param {String} hotKey - 키 이름
+     * @returns {void}
+     */
     static ClickPos(hotKey)
     {
         ; 좌표 가져오기 및 입력 체크| 입력 불가시 return
@@ -547,6 +670,13 @@ class AppManager
         return
     }
 
+    /**
+     * #### 릴리스 이벤트 : 입력 가능시
+     * *
+     * @see AppManager.CreateHotKey - 바인딩 위치
+     * @param {String} hotKey - 키 이름
+     * @returns {void}
+     */
     static ReleaseBtn(hotKey)
     {   
         ; 좌표 가져오기 및 입력 체크| 입력 불가시 return
@@ -562,10 +692,15 @@ class AppManager
         return                       
     }
 
+    /**
+     * #### 오버레이 토글
+     * *
+     * @returns {void}
+     */
     static ToggleOverlay()
     {
         this.SETTINGS.enableOverlay := !this.SETTINGS.enableOverlay
-        ToolTip(this.SETTINGS.enableOverlay " asdadawd")
+        ; ToolTip(this.SETTINGS.enableOverlay " asdadawd")
 
         processHandle := WinActive(this.curTargetTitle)
 
@@ -575,12 +710,11 @@ class AppManager
             this.curHKInfo.ClearOverlay()
     }
 
-    ; 세팅 불러오기
     /**
-     * #### 설명을 입력하세요.
-     * @type {자료형} 
-     * @default null
-     * @returns {SettingData}
+     * #### 설정 불러오기
+     * *
+     * @param {String} path - 설정 파일 경로
+     * @returns {SettingData} - 설정 데이터
      */
     static LoadSetting(path)
     {
@@ -588,10 +722,16 @@ class AppManager
         ; json map 변환 => 구조체로 변환
         mapData := jsongo._Parse(jsonData)
 
-        return MapToClass(mapData, SettingData)
+        return JKUtility.MapToClass(mapData, SettingData)
     }
 
-    ; 세팅 저장하기
+    /**
+     * #### 설정 저장하기
+     * *
+     * @param {SettingData} settingData - 설정 데이터
+     * @param {String} path - 설정 파일 경로
+     * @returns {void}
+     */
     static SaveSetting(settingData, path) 
     {
         jsonString := jsongo.Stringify(settingData) ; JSON 문자열로 변환
@@ -608,7 +748,11 @@ class AppManager
         file.Close() ; 파일 닫기
     }
 
-    ; 스크립트 종료
+    /**
+     * #### 스크립트 종료
+     * *
+     * @returns {void}
+     */
     static CloseScript()
     {
         ; 설정 저장
@@ -655,7 +799,7 @@ AppManager.BeginPlay()
 ; MARK: 활성화 입력 영역
 #HotIf AppManager.IsActive
 
-; 오버레이 토글
+; 오버레이 토글 키
 ` up::AppManager.ToggleOverlay
 
 ; 현재 게임 기본 위치로

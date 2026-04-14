@@ -1,11 +1,21 @@
 #Requires AutoHotkey v2.0
 
-; x,y 2차원
+/** x,y 2차원 자료구조 */
 class Vector2d {
+    /** @type {Number} */
     x := 0
+
+    /** @type {Number} */
     y := 0
 
     ; 생성자
+    /**
+     * #### 생성자
+     * *
+     * @param {Number} x - x 좌표
+     * @param {Number} y - y 좌표
+     * @returns {void}
+     */
     __New(x := 0, y := 0) {
         this.x := x
         this.y := y
@@ -23,22 +33,51 @@ class Vector2d {
     }
 }
 
-; 범용 사용 클래스
+/** #### 범용 사용 클래스 */
 class JKUtility {
     ; MARK: 전역 변수 단
     
-    ; 시트 폴더
-    static sheetFolder := A_ScriptDir . "\Sheet\"
-    ; 가상키 시트 폴더
-    static keyDataFolder := this.sheetFolder . "\KeyData\"
+    /** @type {String} */
+    static _sheetFolder := A_ScriptDir . "\Sheet\" 
+    /**
+     * #### 시트 폴더 경로
+     * @type {String} 
+     */
+    static SHEET_FOLDER => this._sheetFolder
+
+    /** @type {String} */
+    static _keyDataFolder := this.SHEET_FOLDER . "\KeyData\"
+    /**
+     * #### 가상키 시트 폴더 경로
+     * @type {String} 
+     */
+    static KEY_DATA_FOLDER => this._keyDataFolder
     
-    ; 시트 확장자
-    static sheetEXT := ".csv"
+    /** @type {String} */
+    static _sheetEXT := ".csv"
+    /**
+     * #### 시트 확장자
+     * @type {String} 
+     * @example asd := this.KEY_DATA_FOLDER . gameName . this.SHEET_EXT
+     */
+    static SHEET_EXT => this._sheetEXT
     
     ; MARK: 전역 함수 단
     
     ; @@ 지금 무조건 확장자 추가하는데 정규식으로 확인해서 확장자 없을때만 추가하는건 어떨까?
-    ; 폴더 위치, 파일 이름 받아서 시트 데이터 불러오기
+    /**
+     * #### 우선 순위 있는 시트 데이터 불러오기
+     * *
+     * @param {String} csvFolderPath - 시트 폴더 경로
+     * @param {String} csvFileName - 시트 파일 이름
+     * @returns {Array} - 시트 데이터를 배열 { 맵[헤더] : 값 } 형태로 반환
+     * @example 
+     * sheetData := this.LoadPrioritySheetData(path, name)
+     * for row in sheetData
+     * {
+     *     someValue := row["header"]
+     * }
+     */
     static LoadPrioritySheetData(csvFolderPath, csvFileName)
     {
         /** 탐색순서
@@ -58,7 +97,7 @@ class JKUtility {
         for curPR in priorityAry
         {
             ; 경로 조합
-            curCSVPath := csvFolderPath . csvFileName . curPR . this.sheetEXT
+            curCSVPath := csvFolderPath . csvFileName . curPR . this.SHEET_EXT
     
             ; 존재확인 
             if(FileExist(curCSVPath))
@@ -83,7 +122,12 @@ class JKUtility {
         return sheetData
     }
     
-    ; 시트 데이터 구조체로 변환하기
+    /**
+     * #### 시트 데이터 구조체로 변환하기
+     * *
+     * @param {String} csvFilePath - 시트 전체 경로
+     * @returns {Array} - 배열 { 맵[헤더] : 값 } 시트 데이터
+     */
     static LoadSheetData(csvFilePath)
     {
         ; csv 데이터
@@ -125,5 +169,26 @@ class JKUtility {
             Run('*RunAs "' A_AhkPath '" /Restart "' A_ScriptFullPath '"')
             ExitApp()
         }
+    }
+
+    /**
+     * #### map 데이터 => 클래스 로 변환
+     * *
+     * @param {Map} mapData - 변환할 map 데이터
+     * @param {Class} classType - 반환할 클래스 타입
+     * @returns {Class} - 변환된 클래스 데이터
+     */
+    static MapToClass(mapData, classType) 
+    {
+        local newClassIns := classType() ; 클래스 인스턴스 생성
+
+        for key, value in mapData {
+            local strKey := String(key)
+
+            if (newClassIns.HasProp(strKey)) 
+                newClassIns.%strKey% := value ; Map의 값을 클래스 속성으로 설정
+        }
+
+        return newClassIns
     }
 }
