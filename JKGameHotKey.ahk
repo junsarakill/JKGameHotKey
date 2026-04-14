@@ -301,49 +301,26 @@ class AppManager
         set {
             this._isActive := value
             ; @@ 상태 변경
-            ; this.OnActiveChanged()
+            this.OnActiveChanged()
         }
     }
 
-    ; FIXME 클래스화 끝나고 사용
-    static OnActiveChanged()
-    {
-        if(this.IsActive)
-        {
-            ; ToolTip("시트에 있음 키매핑 생성: " curTitle)
-
-            processHandle := WinActive(this.curTargetTitle)
-            ; 키 매핑 시트 데이터 가져오기
-            this.curHKInfo.hotKeyMap := this.LoadKeyData(this.curTargetTitle)
-
-            ; 가상키 생성
-            this.CreateHotKey(this.curHKInfo)
-            
-            ; 오버레이 생성
-            this.CreateOverlay(processHandle, this.curHKInfo)
-        }
-        else if(this.checkStart)
-        {
-            ; ToolTip("dow" curTitle)
-            
-            ; 전체 프로세스에 시트 게임이 하나도 없는지 체크
-            isEnd := true
-            for row in this.sheetNameTable
-            {
-                if(WinExist(row["gameName"]))
-                {
-                    isEnd := false
-                    break
-                }
-            }
-            
-            ; 없으면 스크립트 종료
-            if(isEnd)
-            {
-                ToolTip "목표 게임 없음. 핫 키 종료"
-                Sleep 1000
-                this.CloseScript
-            }
+    /** @private */
+    static _isScriptActive := true
+    /**
+     * #### 스크립트 활성 여부
+     * @type {bool} 
+     * @default true
+     */
+    static IsScriptActive {
+        get => this._isScriptActive
+        set {
+            this._isScriptActive := value
+            ; 현재 가상키를 제거 처리
+            this.RemoveHotKey()
+            ; true로 변경될때는 isactive의 활성 유무 다시 체크
+            if(value == true)
+                this.IsActive := this.FindSheetName(this.curTargetTitle)
         }
     }
     
@@ -433,21 +410,33 @@ class AppManager
         if(this.curTargetTitle = curTitle)
             return
 
+        ; @@ curtargettitle 프로퍼티 화 
         this.curTargetTitle := curTitle
 
         ; 변경되었으니 키 매핑 제거
         this.RemoveHotKey()
+
         ; 시트에 있는 게임인지 체크해서 활성 유무 변경
         this.IsActive := this.FindSheetName(curTitle)
+        ; {@link AppManager.OnActiveChanged}
+    }
 
-        ; @@ 클래스화 끝나면 제거 및 프로퍼티에 작업
-        if(this.IsActive)
+    /**
+     * #### 활성 상태 변경시 발동
+     * *
+     * {@link AppManager.IsActive}
+     * @description 목표에 맞는 가상키 생성 또는 스크립트 종료 체크
+     * @returns {void}
+     */
+    static OnActiveChanged()
+    {
+        if(this.IsScriptActive && this.IsActive)
         {
             ; ToolTip("시트에 있음 키매핑 생성: " curTitle)
 
-            processHandle := WinActive(curTitle)
+            processHandle := WinActive(this.curTargetTitle)
             ; 키 매핑 시트 데이터 가져오기
-            this.curHKInfo.hotKeyMap := this.LoadKeyData(curTitle)
+            this.curHKInfo.hotKeyMap := this.LoadKeyData(this.curTargetTitle)
 
             ; 가상키 생성
             this.CreateHotKey(this.curHKInfo)
@@ -711,6 +700,16 @@ class AppManager
     }
 
     /**
+     * #### 스크립트 활성화 토글
+     * *
+     * @returns {void}
+     */
+    static ToggleScript()
+    {
+        this.IsScriptActive := !this.IsScriptActive
+    }
+
+    /**
      * #### 설정 불러오기
      * *
      * @param {String} path - 설정 파일 경로
@@ -786,13 +785,7 @@ AppManager.BeginPlay()
 ] & Esc::AppManager.CloseScript
 
 ; @@ 스크립트 활성/비활성화 토글
-; 310 line 에 있는 가상키 제거, 가상키 생성 부분을 따와서 토글 함수에 추가
-; XXX isActive 변경 시 작동하도록 프로퍼티화 해서 통합하는 것도 좋을듯.
-; Status {                        ; 변수와 프로퍼티를 하나의 블록처럼 관리
-;         get => this._status
-;         set => this._status := value
-;     }
-; ] & `::
+] & ` up::AppManager.ToggleScript
 
 
 
