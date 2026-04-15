@@ -38,7 +38,7 @@ class KeyData
     /**
      * #### 클래스 데이터 출력
      * *
-     * @returns {String} - 
+     * @returns {String}
      */
     ToString()
     {
@@ -74,7 +74,7 @@ class HotKeyInfo
     ClearHotKey()
     {
         ; 핫키 제거
-        for key, keyData in this.hotKeyMap
+        for , keyData in this.hotKeyMap
         {
             ; 타입 체크
             if(keyData.type = "KEY")
@@ -97,7 +97,7 @@ class HotKeyInfo
      */
     ClearOverlay()
     {
-        for hwnd, info in this.overlayMap
+        for , info in this.overlayMap
         {
             info.Destroy()
         }
@@ -260,12 +260,28 @@ class AppManager
      */
     static sheetNameTable := JKUtility.LoadPrioritySheetData(JKUtility.SHEET_FOLDER, this.KEY_SHEET_NAME)
 
+    /** @type {String} */
+    static _curTargetTitle := ""
     /**
      * #### 현재 목표 게임명
      * @type {String} 
      * @default null
+     * @description 목표 변경시 가상키 재할당
      */
-    static curTargetTitle := ""
+    static CurTargetTitle {
+        get => this._curTargetTitle
+        set {
+            this._curTargetTitle := value
+
+            ; 변경되었으니 키 매핑 제거
+            this.RemoveHotKey()
+
+            ; 시트에 있는 게임인지 체크해서 활성 유무 변경
+            this.IsActive := this.FindSheetName(value)
+            ; {@link AppManager.OnActiveChanged}
+        }
+    }
+    
 
     /**
      * #### 전체 가상키 데이터
@@ -300,7 +316,7 @@ class AppManager
         get => this._isActive
         set {
             this._isActive := value
-            ; @@ 상태 변경
+            ; 상태 변경
             this.OnActiveChanged()
         }
     }
@@ -407,18 +423,10 @@ class AppManager
     {
         ; ToolTip("curtitle: " curTitle)
         ; 현재 목표 게임인지 체크
-        if(this.curTargetTitle = curTitle)
+        if(this.CurTargetTitle = curTitle)
             return
 
-        ; @@ curtargettitle 프로퍼티 화 
-        this.curTargetTitle := curTitle
-
-        ; 변경되었으니 키 매핑 제거
-        this.RemoveHotKey()
-
-        ; 시트에 있는 게임인지 체크해서 활성 유무 변경
-        this.IsActive := this.FindSheetName(curTitle)
-        ; {@link AppManager.OnActiveChanged}
+        this.CurTargetTitle := curTitle
     }
 
     /**
@@ -434,9 +442,9 @@ class AppManager
         {
             ; ToolTip("시트에 있음 키매핑 생성: " curTitle)
 
-            processHandle := WinActive(this.curTargetTitle)
+            processHandle := WinActive(this.CurTargetTitle)
             ; 키 매핑 시트 데이터 가져오기
-            this.curHKInfo.hotKeyMap := this.LoadKeyData(this.curTargetTitle)
+            this.curHKInfo.hotKeyMap := this.LoadKeyData(this.CurTargetTitle)
 
             ; 가상키 생성
             this.CreateHotKey(this.curHKInfo)
@@ -462,9 +470,9 @@ class AppManager
             ; 없으면 스크립트 종료
             if(isEnd)
             {
-                ToolTip "목표 게임 없음. 핫 키 종료"
-                Sleep 1000
-                this.CloseScript
+                ToolTip("목표 게임 없음. 핫 키 종료")
+                Sleep(1000) 
+                this.CloseScript()
             }
         }
     }
@@ -537,7 +545,7 @@ class AppManager
      */
     static CreateHotKey(curHKInfo)
     {
-        for key, keyData in curHKInfo.hotKeyMap
+        for , keyData in curHKInfo.hotKeyMap
         {
             ; 타입 체크
             if(keyData.type = "KEY")
@@ -556,18 +564,18 @@ class AppManager
      * @param {HotKeyInfo} curHKInfo - 가상키 데이터
      * @returns {void}
      */
-    static CreateOverlay(processHandle, curHKInfo)
+    static CreateOverlay(targetHwnd, curHKInfo)
     {
-        if(!processHandle || processHandle = 0)
+        if(!targetHwnd || targetHwnd = 0)
             return
         ; 창 위치 가져오기
-        pos := WinGetClientPos(&outX, &outY, &outWidth, &outHeight, "ahk_id " processHandle)
+        WinGetClientPos(&outX, &outY, , , "ahk_id " targetHwnd)
 
         /** @type {Vector2d} */
         curClientPos := Vector2d(outX, outY)
 
         ; 새 오버레이 생성
-        for key, keyData in curHKInfo.hotKeyMap
+        for , keyData in curHKInfo.hotKeyMap
         {
             /** @type {OverlayInfo} */
             newOverlay := OverlayInfo()
@@ -651,7 +659,7 @@ class AppManager
             return
         
         ; 현재 활성창 체크
-        if(!WinActive(this.curTargetTitle))
+        if(!WinActive(this.CurTargetTitle))
             return
 
         ; 해당 좌표 클릭
@@ -673,7 +681,7 @@ class AppManager
             return
         
         ; 현재 활성창 체크
-        if(!WinActive(this.curTargetTitle))
+        if(!WinActive(this.CurTargetTitle))
             return
 
         ; 해당 좌표 클릭 해제
@@ -691,7 +699,7 @@ class AppManager
         this.SETTINGS.enableOverlay := !this.SETTINGS.enableOverlay
         ; ToolTip(this.SETTINGS.enableOverlay " asdadawd")
 
-        processHandle := WinActive(this.curTargetTitle)
+        processHandle := WinActive(this.CurTargetTitle)
 
         if(this.SETTINGS.enableOverlay)
             this.CreateOverlay(processHandle, this.curHKInfo)
@@ -758,7 +766,7 @@ class AppManager
         settingMap := this.SETTINGS.ToMap()
         this.SaveSetting(settingMap, this.SETTING_PATH)
 
-        ExitApp
+        ExitApp()
     }
 }
 
@@ -779,13 +787,13 @@ AppManager.BeginPlay()
 ; MARK: 입력 영역
 
 ; XXX 디버그용 즉시 체크 시작
-[ & Esc::AppManager.WaitStartProgram                   
+[ & Esc::AppManager.WaitStartProgram()                   
 
 ; 종료 키
-] & Esc::AppManager.CloseScript
+] & Esc::AppManager.CloseScript()
 
-; @@ 스크립트 활성/비활성화 토글
-] & ` up::AppManager.ToggleScript
+; 스크립트 활성/비활성화 토글
+] & ` up::AppManager.ToggleScript()
 
 
 
@@ -793,10 +801,10 @@ AppManager.BeginPlay()
 #HotIf AppManager.IsActive
 
 ; 오버레이 토글 키
-` up::AppManager.ToggleOverlay
+` up::AppManager.ToggleOverlay()
 
 ; 현재 게임 기본 위치로
-F7::SetGameDefaultPosition.RunSetGameDefaultPosition
+F7::SetGameDefaultPosition.RunSetGameDefaultPosition()
 
 
 #HotIf 
