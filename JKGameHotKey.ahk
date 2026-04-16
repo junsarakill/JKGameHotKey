@@ -178,18 +178,67 @@ class OverlayInfo
     }
 }
 
-; 설정 구조체
+/** 설정 클래스
+ * @description 설정 저장에 필요없는 변수는 _ 붙이기
+ */
 class SettingData
 {
     /** @type {Bool} */
     enableOverlay := true
 
+    /** @type {String} */
+    version := "1.0.0"
+
+    /**
+     * #### 설정 파일 경로
+     * @type {String} 
+     * @readonly
+     */
+    static _PATH => A_ScriptDir . "\Setting.json"
+
+    Save()
+    {
+        try
+        {
+            jsonStr := jsongo.Stringify(this.ToMap(), 4)
+
+            ; 기존 파일 제거
+            if(FileExist(SettingData._PATH))
+                FileDelete(SettingData._PATH)
+
+            FileAppend(jsonStr, SettingData._PATH, "UTF-8")
+
+            return true
+        }
+        catch Error as e 
+        {
+            MsgBox("설정 저장 실패: " . e.Message)
+
+            return false
+        }
+    }
+
+    ; @@ 이후 load 작업
+
+    /**
+     * #### 필요 변수만 저장용 맵으로 변환
+     * *
+     * @returns {Map} - 설정 저장용
+     */
     ToMap()
     {
-        map := {
-            enableOverlay : this.enableOverlay
+        /** @type {Map} */
+        map := Map()
+
+        for name, value in this.OwnProps()
+        {
+            ; 불필요 변수 스킵
+            if(SubStr(name, 1, 1) = "_")
+                continue
+
+            map[name] := value
         }
-        
+
         return map
     }
 }
@@ -223,12 +272,24 @@ class AppManager
 {
     ; MARK: 변수 영역
 
+    ; FIXME 작업 중 곧 이전함
+    /** @type {String} */
+    static _settingPath := A_ScriptDir . "\Setting.json"
     /**
      * #### 설정 json 파일
      * @type {String} 
      * @readonly
      */
-    static SETTING_PATH => A_ScriptDir . "\Setting.ini"
+    static SETTING_PATH {
+        get {
+            ; 경로에 파일 존재 체크
+            FileExist(this._settingPath)
+
+            ; 없으면 설정 파일 생성
+
+            return this._settingPath
+        }
+    } 
 
     /** @type {SettingData} */
     static _settings := this.LoadSetting(this.SETTING_PATH) 
@@ -717,6 +778,7 @@ class AppManager
         this.IsScriptActive := !this.IsScriptActive
     }
 
+    ; @@ 추후 settingdata 로 이동
     /**
      * #### 설정 불러오기
      * *
@@ -732,9 +794,11 @@ class AppManager
         return JKUtility.MapToClass(mapData, SettingData)
     }
 
+    ; @@ 추후 settingdata 로 이동
     /**
      * #### 설정 저장하기
      * *
+     * {@link AppManager.SETTING_PATH}
      * @param {SettingData} settingData - 설정 데이터
      * @param {String} path - 설정 파일 경로
      * @returns {void}
@@ -768,6 +832,12 @@ class AppManager
 
         ExitApp()
     }
+
+    ; @@ 추후 settingdata 로 이동
+    static CreateDefaultSettingFile()
+    {
+        
+    } 
 }
 
 
