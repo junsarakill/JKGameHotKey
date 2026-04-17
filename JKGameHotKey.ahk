@@ -196,11 +196,16 @@ class SettingData
      */
     static _PATH => A_ScriptDir . "\Setting.json"
 
+    /**
+     * #### 설정 저장
+     * *
+     * @returns {bool} - 저장 성공 유무
+     */
     Save()
     {
         try
         {
-            jsonStr := jsongo.Stringify(this.ToMap(), 4)
+            jsonStr := jsongo.Stringify(this.ToMap(), , 4)
 
             ; 기존 파일 제거
             if(FileExist(SettingData._PATH))
@@ -212,13 +217,44 @@ class SettingData
         }
         catch Error as e 
         {
-            MsgBox("설정 저장 실패: " . e.Message)
+            MsgBox(
+                "오류 발생 위치: " . e.Line . "번째 줄`n" .
+                "발생 함수: " . e.What . "`n" .
+                "메시지: " . e.Message
+            )
 
             return false
         }
     }
 
-    ; @@ 이후 load 작업
+    /**
+     * #### 설정 불러오기
+     * *
+     * @returns {SettingData} - 설정 객체
+     */
+    static Load()
+    {
+        ; 설정 파일 존재 확인
+        if(!FileExist(this._PATH))
+            ; 없다면 초기값 반환
+            return SettingData()
+
+        try {
+            jsonData := FileRead(this._PATH, "UTF-8")
+            ; json => map 변환
+            mapData := jsongo._Parse(jsonData)
+            
+            ; map => 클래스 변환
+            return JKUtility.MapToClass(mapData, SettingData)
+        } 
+        catch Error as e 
+        {
+            MsgBox("정상 로드 실패, 초기값 반환: " . e.Message)
+
+            return SettingData()
+        }    
+
+    }
 
     /**
      * #### 필요 변수만 저장용 맵으로 변환
@@ -228,7 +264,7 @@ class SettingData
     ToMap()
     {
         /** @type {Map} */
-        map := Map()
+        resultMap := Map()
 
         for name, value in this.OwnProps()
         {
@@ -236,10 +272,10 @@ class SettingData
             if(SubStr(name, 1, 1) = "_")
                 continue
 
-            map[name] := value
+            resultMap[name] := value
         }
 
-        return map
+        return resultMap
     }
 }
 
@@ -292,7 +328,7 @@ class AppManager
     } 
 
     /** @type {SettingData} */
-    static _settings := this.LoadSetting(this.SETTING_PATH) 
+    static _settings := SettingData.Load()
     /**
      * #### 설정 데이터
      * @type {SettingData} 
@@ -778,47 +814,6 @@ class AppManager
         this.IsScriptActive := !this.IsScriptActive
     }
 
-    ; @@ 추후 settingdata 로 이동
-    /**
-     * #### 설정 불러오기
-     * *
-     * @param {String} path - 설정 파일 경로
-     * @returns {SettingData} - 설정 데이터
-     */
-    static LoadSetting(path)
-    {
-        jsonData := FileRead(path, "UTF-8")
-        ; json map 변환 => 구조체로 변환
-        mapData := jsongo._Parse(jsonData)
-
-        return JKUtility.MapToClass(mapData, SettingData)
-    }
-
-    ; @@ 추후 settingdata 로 이동
-    /**
-     * #### 설정 저장하기
-     * *
-     * {@link AppManager.SETTING_PATH}
-     * @param {SettingData} settingData - 설정 데이터
-     * @param {String} path - 설정 파일 경로
-     * @returns {void}
-     */
-    static SaveSetting(settingData, path) 
-    {
-        jsonString := jsongo.Stringify(settingData) ; JSON 문자열로 변환
-
-        ; 파일을 쓰기 모드로 열기
-        file := FileOpen(path, "w") ; "w" 모드는 덮어쓰기 모드
-        if !file 
-        {
-            MsgBox("파일을 열 수 없습니다: " path)
-            return
-        }
-
-        file.Write(jsonString) ; JSON 문자열 쓰기
-        file.Close() ; 파일 닫기
-    }
-
     /**
      * #### 스크립트 종료
      * *
@@ -827,17 +822,10 @@ class AppManager
     static CloseScript()
     {
         ; 설정 저장
-        settingMap := this.SETTINGS.ToMap()
-        this.SaveSetting(settingMap, this.SETTING_PATH)
+        this.SETTINGS.Save()
 
         ExitApp()
     }
-
-    ; @@ 추후 settingdata 로 이동
-    static CreateDefaultSettingFile()
-    {
-        
-    } 
 }
 
 
