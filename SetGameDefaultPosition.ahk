@@ -74,8 +74,7 @@ class SetGameDefaultPosition
         posDataAry := []
         for oneData in dataAry
         {
-            ; @@ map to class 함수 사용 필요
-            onePosData := PosData(oneData["name"], oneData["x"], oneData["y"], oneData["monitor"])
+            onePosData := JKUtility.MapToClass(oneData, PosData)
 
             posDataAry.Push(onePosData)
         }
@@ -108,7 +107,7 @@ class SetGameDefaultPosition
             WinGetPos(,, &curW, &curH, curProcName)
 
             ; 위치 이동 | 사이즈 유지
-            WinMove(posData.pos.x, posData.pos.y, curW, , curProcName)
+            WinMove(posData.pos.x, posData.pos.y, curW, curH, curProcName)
         }
     }
 

@@ -308,25 +308,6 @@ class AppManager
 {
     ; MARK: 변수 영역
 
-    ; FIXME 작업 중 곧 이전함
-    /** @type {String} */
-    static _settingPath := A_ScriptDir . "\Setting.json"
-    /**
-     * #### 설정 json 파일
-     * @type {String} 
-     * @readonly
-     */
-    static SETTING_PATH {
-        get {
-            ; 경로에 파일 존재 체크
-            FileExist(this._settingPath)
-
-            ; 없으면 설정 파일 생성
-
-            return this._settingPath
-        }
-    } 
-
     /** @type {SettingData} */
     static _settings := SettingData.Load()
     /**

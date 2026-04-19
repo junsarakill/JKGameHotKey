@@ -64,7 +64,6 @@ class JKUtility {
     
     ; MARK: 전역 함수 단
     
-    ; @@ 지금 무조건 확장자 추가하는데 정규식으로 확인해서 확장자 없을때만 추가하는건 어떨까?
     /**
      * #### 우선 순위 있는 시트 데이터 불러오기
      * *
@@ -96,6 +95,7 @@ class JKUtility {
         ; 배열로 해서 포 돌리기
         for curPR in priorityAry
         {
+            ; @@ 지금 무조건 확장자 추가하는데 정규식으로 확인해서 확장자 없을때만 추가하는건 어떨까?
             ; 경로 조합
             curCSVPath := csvFolderPath . csvFileName . curPR . this.SHEET_EXT
     
