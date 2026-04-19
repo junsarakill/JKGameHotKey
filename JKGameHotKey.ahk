@@ -178,19 +178,104 @@ class OverlayInfo
     }
 }
 
-; 설정 구조체
+/** 설정 클래스
+ * @description 설정 저장에 필요없는 변수는 _ 붙이기
+ */
 class SettingData
 {
     /** @type {Bool} */
     enableOverlay := true
 
+    /** @type {String} */
+    version := "1.0.0"
+
+    /**
+     * #### 설정 파일 경로
+     * @type {String} 
+     * @readonly
+     */
+    static _PATH => A_ScriptDir . "\Setting.json"
+
+    /**
+     * #### 설정 저장
+     * *
+     * @returns {bool} - 저장 성공 유무
+     */
+    Save()
+    {
+        try
+        {
+            jsonStr := jsongo.Stringify(this.ToMap(), , 4)
+
+            ; 기존 파일 제거
+            if(FileExist(SettingData._PATH))
+                FileDelete(SettingData._PATH)
+
+            FileAppend(jsonStr, SettingData._PATH, "UTF-8")
+
+            return true
+        }
+        catch Error as e 
+        {
+            MsgBox(
+                "오류 발생 위치: " . e.Line . "번째 줄`n" .
+                "발생 함수: " . e.What . "`n" .
+                "메시지: " . e.Message
+            )
+
+            return false
+        }
+    }
+
+    /**
+     * #### 설정 불러오기
+     * *
+     * @returns {SettingData} - 설정 객체
+     */
+    static Load()
+    {
+        ; 설정 파일 존재 확인
+        if(!FileExist(this._PATH))
+            ; 없다면 초기값 반환
+            return SettingData()
+
+        try {
+            jsonData := FileRead(this._PATH, "UTF-8")
+            ; json => map 변환
+            mapData := jsongo._Parse(jsonData)
+            
+            ; map => 클래스 변환
+            return JKUtility.MapToClass(mapData, SettingData)
+        } 
+        catch Error as e 
+        {
+            MsgBox("정상 로드 실패, 초기값 반환: " . e.Message)
+
+            return SettingData()
+        }    
+
+    }
+
+    /**
+     * #### 필요 변수만 저장용 맵으로 변환
+     * *
+     * @returns {Map} - 설정 저장용
+     */
     ToMap()
     {
-        map := {
-            enableOverlay : this.enableOverlay
+        /** @type {Map} */
+        resultMap := Map()
+
+        for name, value in this.OwnProps()
+        {
+            ; 불필요 변수 스킵
+            if(SubStr(name, 1, 1) = "_")
+                continue
+
+            resultMap[name] := value
         }
-        
-        return map
+
+        return resultMap
     }
 }
 
@@ -223,15 +308,27 @@ class AppManager
 {
     ; MARK: 변수 영역
 
+    ; FIXME 작업 중 곧 이전함
+    /** @type {String} */
+    static _settingPath := A_ScriptDir . "\Setting.json"
     /**
      * #### 설정 json 파일
      * @type {String} 
      * @readonly
      */
-    static SETTING_PATH => A_ScriptDir . "\Setting.ini"
+    static SETTING_PATH {
+        get {
+            ; 경로에 파일 존재 체크
+            FileExist(this._settingPath)
+
+            ; 없으면 설정 파일 생성
+
+            return this._settingPath
+        }
+    } 
 
     /** @type {SettingData} */
-    static _settings := this.LoadSetting(this.SETTING_PATH) 
+    static _settings := SettingData.Load()
     /**
      * #### 설정 데이터
      * @type {SettingData} 
@@ -718,44 +815,6 @@ class AppManager
     }
 
     /**
-     * #### 설정 불러오기
-     * *
-     * @param {String} path - 설정 파일 경로
-     * @returns {SettingData} - 설정 데이터
-     */
-    static LoadSetting(path)
-    {
-        jsonData := FileRead(path, "UTF-8")
-        ; json map 변환 => 구조체로 변환
-        mapData := jsongo._Parse(jsonData)
-
-        return JKUtility.MapToClass(mapData, SettingData)
-    }
-
-    /**
-     * #### 설정 저장하기
-     * *
-     * @param {SettingData} settingData - 설정 데이터
-     * @param {String} path - 설정 파일 경로
-     * @returns {void}
-     */
-    static SaveSetting(settingData, path) 
-    {
-        jsonString := jsongo.Stringify(settingData) ; JSON 문자열로 변환
-
-        ; 파일을 쓰기 모드로 열기
-        file := FileOpen(path, "w") ; "w" 모드는 덮어쓰기 모드
-        if !file 
-        {
-            MsgBox("파일을 열 수 없습니다: " path)
-            return
-        }
-
-        file.Write(jsonString) ; JSON 문자열 쓰기
-        file.Close() ; 파일 닫기
-    }
-
-    /**
      * #### 스크립트 종료
      * *
      * @returns {void}
@@ -763,8 +822,7 @@ class AppManager
     static CloseScript()
     {
         ; 설정 저장
-        settingMap := this.SETTINGS.ToMap()
-        this.SaveSetting(settingMap, this.SETTING_PATH)
+        this.SETTINGS.Save()
 
         ExitApp()
     }

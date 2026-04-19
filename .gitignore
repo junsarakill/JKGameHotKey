@@ -1,5 +1,7 @@
-Setting.ini
 *.code-workspace
 # 개인 시트 제외
 *.local.csv
 
+# 설정 파일 제외
+Setting.ini
+Setting.json
