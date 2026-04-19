@@ -30,6 +30,25 @@ class PosData
         this.pos := Vector2d(x, y)
         this.monitor := monitor
     }
+
+    /**
+     * #### 생성자 (맵)
+     * *
+     * @param {Map} mapData - 생성 데이터 맵
+     * @returns {PosData} - 새 객체
+     */
+    static NewFromMap(mapData := Map())
+    {
+        newIns := JKUtility.MapToClass(mapData, PosData)
+
+        ; x,y 변환
+        if(mapData.Has("x") && mapData.Has("y"))
+        {
+            newIns.pos := Vector2d(mapData.Get("x"), mapData.Get("y"))
+        }
+
+        return newIns
+    }
 }
 
 class SetGameDefaultPosition
@@ -74,7 +93,7 @@ class SetGameDefaultPosition
         posDataAry := []
         for oneData in dataAry
         {
-            onePosData := JKUtility.MapToClass(oneData, PosData)
+            onePosData := PosData.NewFromMap(oneData)
 
             posDataAry.Push(onePosData)
         }
