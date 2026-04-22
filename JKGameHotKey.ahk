@@ -47,12 +47,27 @@ class KeyData
     }
 }
 
+/** ;@@ 가상키 객체 오브젝트 풀링화
+ * 현재 hotkey() 객체를 보유하고 있지 않음. 간접적으로 설정중.
+ * 1. 일단 핫키 객체를 보유할 맵을 추가 [$키이름전문] : 핫키객체
+ * {@link HotKeyInfo}
+ * 
+ * 2. 생성시 해당 핫키가 존재 검사 및 없으면 생성/ 있으면 활성화 로직 추가 | OnEvent 로 바인딩 함수 변경
+ * {@link AppManager.CreateHotKey}
+ * 
+ * 3. 비활성화 시 제거 대신 풀에 있는 핫키 비활성화.| 오버레이도 추후 같은 로직으로 생성/비활성화
+ * {@link HotKeyInfo.ClearHotKey}
+ * 
+ * 미리 만들진 말고 lazy intial 로 생성한 만큼 저장해두기
+ */
+/** 가상키, 오버레이 객체를 전부 가지고 있는 객체 */
 class HotKeyInfo
 {
     /**
      * #### 가상키 데이터 맵
      * @type {Map} 
      * @default null
+     * @see keyData
      * @example for key, keyData in this.hotKeyMap
      */
     hotKeyMap := Map()
@@ -61,6 +76,7 @@ class HotKeyInfo
      * #### 가상키 오버레이 맵
      * @type {Map} 
      * @default null
+     * @see OverlayInfo
      * @example for guiHwnd , overlayInfo in this.overlayMap
      */
     overlayMap := Map()
