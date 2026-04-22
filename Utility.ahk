@@ -68,7 +68,7 @@ class JKUtility {
      * #### 우선 순위 있는 시트 데이터 불러오기
      * *
      * @param {String} csvFolderPath - 시트 폴더 경로
-     * @param {String} csvFileName - 시트 파일 이름
+     * @param {String} csvFileName - 시트 파일 이름 (확장자 없이)
      * @returns {Array} - 시트 데이터를 배열 { 맵[헤더] : 값 } 형태로 반환
      * @example 
      * sheetData := this.LoadPrioritySheetData(path, name)
