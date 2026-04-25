@@ -3,6 +3,7 @@
 #Include Lib\jsongo_AHKv2-main/src/jsongo.v2.ahk
 #Include Utility.ahk
 #Include SetGameDefaultPosition.ahk
+#Include HotKeyManager.ahk
 
 ; MARK: 클래스 선언
 
@@ -47,19 +48,7 @@ class KeyData
     }
 }
 
-/** ;@@ 가상키 객체 오브젝트 풀링화
- * 현재 hotkey() 객체를 보유하고 있지 않음. 간접적으로 설정중.
- * 1. 일단 핫키 객체를 보유할 맵을 추가 [$키이름전문] : 핫키객체
- * {@link HotKeyInfo}
- * 
- * 2. 생성시 해당 핫키가 존재 검사 및 없으면 생성/ 있으면 활성화 로직 추가 | OnEvent 로 바인딩 함수 변경
- * {@link AppManager.CreateHotKey}
- * 
- * 3. 비활성화 시 제거 대신 풀에 있는 핫키 비활성화.| 오버레이도 추후 같은 로직으로 생성/비활성화
- * {@link HotKeyInfo.ClearHotKey}
- * 
- * 미리 만들진 말고 lazy intial 로 생성한 만큼 저장해두기
- */
+
 /** 가상키, 오버레이 객체를 전부 가지고 있는 객체 */
 class HotKeyInfo
 {
@@ -367,12 +356,12 @@ class AppManager
         set {
             this._curTargetTitle := value
 
-            ; 변경되었으니 키 매핑 제거
-            this.RemoveHotKey()
+            ; 가상키 매니저에 업데이트
+            HotKeyManager.OnTargetChanged(value)
 
             ; 시트에 있는 게임인지 체크해서 활성 유무 변경
             this.IsActive := this.FindSheetName(value)
-            ; {@link AppManager.OnActiveChanged}
+            /** {@link AppManager.OnActiveChanged} */ 
         }
     }
     
@@ -427,7 +416,7 @@ class AppManager
         set {
             this._isScriptActive := value
             ; 현재 가상키를 제거 처리
-            this.RemoveHotKey()
+            HotKeyManager.RemoveHotKey()
             ; true로 변경될때는 isactive의 활성 유무 다시 체크
             if(value == true)
                 this.IsActive := this.FindSheetName(this.curTargetTitle)
@@ -456,7 +445,6 @@ class AppManager
      * *
      * @returns {void}
      */
-    
     static WaitStartProgram()
     {
         this.checkStart := true
@@ -467,7 +455,6 @@ class AppManager
      * *
      * @returns {void}
      */
-    
     static BindFocusChange()
     {
         ; 스크립트 핸들을 등록합니다.
@@ -477,7 +464,6 @@ class AppManager
         OnMessage(DllCall("RegisterWindowMessage", "str", "SHELLHOOK"), ObjBindMethod(this, "ShellHook")) 
     }
 
-    ; 포커스 변경됨
     /**
      * #### 윈도우 포커스 변경시 작동
      * *
@@ -539,10 +525,9 @@ class AppManager
             processHandle := WinActive(this.CurTargetTitle)
             ; 키 매핑 시트 데이터 가져오기
             this.curHKInfo.hotKeyMap := this.LoadKeyData(this.CurTargetTitle)
+            ; 가상키 매니저에 데이터 업데이트
+            HotKeyManager.SetupHotKey(this.curHKInfo)
 
-            ; 가상키 생성
-            this.CreateHotKey(this.curHKInfo)
-            
             ; 오버레이 생성
             this.CreateOverlay(processHandle, this.curHKInfo)
         }
@@ -631,25 +616,7 @@ class AppManager
         return sheetName
     }
 
-    /**
-     * #### 가상키 생성
-     * *
-     * @param {HotKeyInfo} curHKInfo - 가상키 데이터
-     * @returns {void}
-     */
-    static CreateHotKey(curHKInfo)
-    {
-        for , keyData in curHKInfo.hotKeyMap
-        {
-            ; 타입 체크
-            if(keyData.type = "KEY")
-            {
-                ; 핫 키 생성
-                Hotkey("$" keyData.name, ObjBindMethod(this, "ClickPos"), "On")
-                Hotkey("$" keyData.name " up", ObjBindMethod(this, "ReleaseBtn"), "On")
-            }
-        }
-    }
+    ; MARK: 오버레이 관리 영역
 
     /**
      * #### 가상키 오버레이 생성
@@ -701,86 +668,6 @@ class AppManager
             ; 오버레이 맵에 추가
             curHKInfo.overlayMap[newOverlay.aGUI.Hwnd] := newOverlay
         }
-    }
-
-    /**
-     * #### 현재 가상키 전체 제거
-     * *
-     * @returns {void}
-     */
-    static RemoveHotKey()
-    {
-        this.curHKInfo.ClearHotKey()
-    }
-
-    /**
-     * #### 해당 키 좌표 가져오기
-     * *
-     * @param {Vector2d} pos2D - 해당 가상키 좌표
-     * @param {String} key - 키 이름
-     * @returns {Bool} - 가져오기 성공 유무
-     */
-    static GetKeyPos(&pos2D, key)
-    {
-        ; $ 잘라내기
-        key := StrReplace(key, "$")
-        key := StrReplace(key, " up")
-
-        ; 핫 키 인지 확인
-        if(!this.curHKInfo.hotKeyMap.Has(key))
-            return false
-
-        if(this.curHKInfo.hotKeyMap[key].type != "KEY")
-            return false
-
-        ; 해당 키 좌표 가져오기
-        pos2D := this.curHKInfo.hotKeyMap[key].pos
-
-        return true
-    }
-
-    /**
-     * #### 클릭 이벤트 : 입력 가능시
-     * *
-     * @see AppManager.CreateHotKey - 바인딩 위치
-     * @param {String} hotKey - 키 이름
-     * @returns {void}
-     */
-    static ClickPos(hotKey)
-    {
-        ; 좌표 가져오기 및 입력 체크| 입력 불가시 return
-        if(!this.GetKeyPos(&pos2D, hotKey))
-            return
-        
-        ; 현재 활성창 체크
-        if(!WinActive(this.CurTargetTitle))
-            return
-
-        ; 해당 좌표 클릭
-        MouseClick('L',pos2D.x,pos2D.y, 1,2,'D')
-        return
-    }
-
-    /**
-     * #### 릴리스 이벤트 : 입력 가능시
-     * *
-     * @see AppManager.CreateHotKey - 바인딩 위치
-     * @param {String} hotKey - 키 이름
-     * @returns {void}
-     */
-    static ReleaseBtn(hotKey)
-    {   
-        ; 좌표 가져오기 및 입력 체크| 입력 불가시 return
-        if(!this.GetKeyPos(&pos2D, hotKey))
-            return
-        
-        ; 현재 활성창 체크
-        if(!WinActive(this.CurTargetTitle))
-            return
-
-        ; 해당 좌표 클릭 해제
-        MouseClick('L',pos2D.x,pos2D.y, 1,2,'U')
-        return                       
     }
 
     /**
