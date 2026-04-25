@@ -49,7 +49,7 @@ class KeyData
 }
 
 
-/** 가상키, 오버레이 객체를 전부 가지고 있는 객체 */
+/** 가상키 데이터, 오버레이 객체를 전부 가지고 있는 청사진 클래스 */
 class HotKeyInfo
 {
     /**
@@ -69,46 +69,6 @@ class HotKeyInfo
      * @example for guiHwnd , overlayInfo in this.overlayMap
      */
     overlayMap := Map()
-
-    /**
-     * #### 가상키 초기화
-     * *
-     * @description 가상키 비활성화, 오버레이 gui 제거, 맵 초기화
-     * @returns {void}
-     */
-    ClearHotKey()
-    {
-        ; 핫키 제거
-        for , keyData in this.hotKeyMap
-        {
-            ; 타입 체크
-            if(keyData.type = "KEY")
-            {                               
-                Hotkey("$" keyData.name, "Off") ; 핫키 비활성화
-                Hotkey("$" keyData.name " up", "Off") ; 핫키 비활성화
-            }
-        }                                   
-        
-        this.hotKeyMap := Map()
-
-        ; 오버레이 제거
-        this.ClearOverlay()
-    }
-
-    /**
-     * #### 오버레이 초기화
-     * *
-     * @returns {void}
-     */
-    ClearOverlay()
-    {
-        for , info in this.overlayMap
-        {
-            info.Destroy()
-        }
-
-        this.overlayMap := Map()
-    }
 }
 
 /**
@@ -290,19 +250,19 @@ class SettingData
  * 2. 포커스 체크 딜리게이트 등록 | {@link AppManager.BindFocusChange} -> {@link AppManager.ShellHook}
  * -> 포커스 체크 | {@link AppManager.CheckFocus}
  * -> 현재 매핑 게임명과 같은지 검사
- * -> 다르면 키매핑 제거 | {@link AppManager.RemoveHotKey}
+ * -> 다르면 키매핑 제거 | {@link HotKeyManager.RemoveHotKey}
  * -> 다르면 시트에 해당 게임명 있는지 검사 | {@link AppManager.FindGameName}
  *
  * 있으면 키매핑 데이터 불러오기 | {@link AppManager.LoadKeyData}
- * -> 해당 게임 키매핑 생성 | {@link AppManager.CreateHotKey}  
+ * -> 해당 게임 키매핑 생성 | {@link HotKeyManager.CreateHotKey}  
  * 
  * 없으면 전체 프로세스에 목표 게임 존재 체크
  * -> 없으면 스크립트 종료 {@link AppManager.CloseScript}
  * 
- * 3. 가상키 누르기 | {@link  AppManager.ClickPos}
- * -> 해당 키 좌표 가져오기 | {@link  AppManager.GetKeyPos}
- * -> 해당 좌표 클릭 | {@link AppManager.MouseClick}
- * -> 가상키 떼기 | {@link AppManager.ReleaseBtn}
+ * 3. 가상키 누르기 | {@link  HotKeyManager.OnKeyDown}
+ * -> 해당 키 좌표 가져오기 | {@link  HotKeyManager.GetKeyPos}
+ * -> 해당 좌표 클릭 | {@link HotKeyManager.OnKeyDown}
+ * -> 가상키 떼기 | {@link HotKeyManager.OnKeyUp}
  * 
  */
 
@@ -358,6 +318,9 @@ class AppManager
 
             ; 가상키 매니저에 업데이트
             HotKeyManager.OnTargetChanged(value)
+
+            ; 현재 오버레이 제거
+            this.ClearOverlay()
 
             ; 시트에 있는 게임인지 체크해서 활성 유무 변경
             this.IsActive := this.FindSheetName(value)
@@ -512,7 +475,7 @@ class AppManager
     /**
      * #### 활성 상태 변경시 발동
      * *
-     * {@link AppManager.IsActive}
+     * @see AppManager.IsActive
      * @description 목표에 맞는 가상키 생성 또는 스크립트 종료 체크
      * @returns {void}
      */
@@ -685,7 +648,24 @@ class AppManager
         if(this.SETTINGS.enableOverlay)
             this.CreateOverlay(processHandle, this.curHKInfo)
         else
-            this.curHKInfo.ClearOverlay()
+            this.ClearOverlay()
+    }
+
+    ; 오버레이 초기화
+    /**
+     * #### 오버레이 초기화
+     * *
+     * @see OverlayInfo
+     * @returns {void}
+     */
+    static ClearOverlay()
+    {
+        for , overlayObj in this.curHKInfo.overlayMap
+        {
+            overlayObj.Destroy()
+        }
+
+        this.curHKInfo.overlayMap := Map()
     }
 
     /**

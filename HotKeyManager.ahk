@@ -33,6 +33,7 @@ class HotKeyManager
     /**
      * #### 목표 게임 변경
      * *
+     * @description 변경시 현재 활성화된 가상키 제거
      * @param {String} newTargetTitle - 변경된 게임명
      * @returns {void}
      */
@@ -44,7 +45,13 @@ class HotKeyManager
         this.RemoveHotKey()
     }
 
-    ; 가상키 데이터 업데이트
+    /**
+     * #### 가상키 데이터 업데이트
+     * *
+     * @description 데이터 참조로 받고 신규 가상키 생성
+     * @param {HotKeyInfo} hkInfo - 새 가상키 데이터
+     * @returns {void}
+     */
     static SetupHotKey(hkInfo)
     {
         this.curHKInfo := hkInfo
@@ -66,20 +73,32 @@ class HotKeyManager
             if(keyData.type = "KEY")
             {
                 ; 핫 키 생성
-                Hotkey("$" keyData.name, ObjBindMethod(this, "ClickPos"), "On")
-                Hotkey("$" keyData.name " up", ObjBindMethod(this, "ReleaseBtn"), "On")
+                Hotkey("$" keyData.name, ObjBindMethod(this, "OnKeyDown"), "On")
+                Hotkey("$" keyData.name " up", ObjBindMethod(this, "OnKeyUp"), "On")
             }
         }
     }   
 
     /**
-     * #### 가상키 전체 제거
+     * #### 가상키 초기화
      * *
+     * @description 가상키 비활성화, 맵 초기화
      * @returns {void}
      */
     static RemoveHotKey()
     {
-        this.curHKInfo.ClearHotKey()
+        ; 핫키 제거
+        for , keyData in this.curHKInfo.hotKeyMap
+        {
+            ; 타입 체크
+            if(keyData.type = "KEY")
+            {                               
+                Hotkey("$" keyData.name, "Off") ; 핫키 비활성화
+                Hotkey("$" keyData.name " up", "Off") ; 핫키 비활성화
+            }
+        }                                   
+        
+        this.curHKInfo.hotKeyMap := Map()
     }
 
     /**
@@ -111,11 +130,11 @@ class HotKeyManager
     /**
      * #### 클릭 이벤트 : 입력 가능시
      * *
-     * @see AppManager.CreateHotKey - 바인딩 위치
+     * @see HotKeyManager.CreateHotKey - 바인딩 위치
      * @param {String} hotKey - 키 이름
      * @returns {void}
      */
-    static ClickPos(hotKey)
+    static OnKeyDown(hotKey)
     {
         ; 좌표 가져오기 및 입력 체크| 입력 불가시 return
         if(!this.GetKeyPos(&pos2D, hotKey))
@@ -133,11 +152,11 @@ class HotKeyManager
     /**
      * #### 릴리스 이벤트 : 입력 가능시
      * *
-     * @see AppManager.CreateHotKey - 바인딩 위치
+     * @see HotKeyManager.CreateHotKey - 바인딩 위치
      * @param {String} hotKey - 키 이름
      * @returns {void}
      */
-    static ReleaseBtn(hotKey)
+    static OnKeyUp(hotKey)
     {   
         ; 좌표 가져오기 및 입력 체크| 입력 불가시 return
         if(!this.GetKeyPos(&pos2D, hotKey))
@@ -158,7 +177,7 @@ class HotKeyManager
      * {@link HotKeyInfo}
      * 
      * 2. 생성시 해당 핫키가 존재 검사 및 없으면 생성/ 있으면 활성화 로직 추가 | OnEvent 로 바인딩 함수 변경
-     * {@link AppManager.CreateHotKey}
+     * {@link HotKeyManager.CreateHotKey}
      * 
      * 3. 비활성화 시 제거 대신 풀에 있는 핫키 비활성화.| 오버레이도 추후 같은 로직으로 생성/비활성화
      * {@link HotKeyInfo.ClearHotKey}
