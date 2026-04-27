@@ -9,8 +9,6 @@
  ***********************************************************************/
 class HotKeyManager
 {
-    /** @see https://github.com/junsarakill/JKGameHotKey/issues/31*/ 
-
     ; MARK: 변수 영역
 
     /**
@@ -19,6 +17,9 @@ class HotKeyManager
      * @default null
      */
     static curHKInfo := HotKeyInfo()
+
+    ; @@ 전체 가상키 객체 풀 [$키이름전문] : 핫키객체
+    static hotKeyObjPoolMap := Map()
 
     /**
      * #### 현재 목표 게임명
@@ -77,7 +78,21 @@ class HotKeyManager
                 Hotkey("$" keyData.name " up", ObjBindMethod(this, "OnKeyUp"), "On")
             }
         }
-    }   
+    }  
+
+    ; @@ 가상키 오브젝트 풀에서 받아오기
+    static GetHotKey(fullKeyName, methodName)
+    {
+        ; 오브젝트 풀에 있으면 재사용
+        if(this.hotKeyObjPoolMap.Has(fullKeyName))
+        {
+            /** @type {} */
+            hkObj := this.hotKeyObjPoolMap[fullKeyName]
+            
+        }
+        
+
+    } 
 
     /**
      * #### 가상키 초기화
