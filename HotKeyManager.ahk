@@ -1,11 +1,12 @@
 #Requires AutoHotkey v2.0
 #Include Utility.ahk
+#Include JKHotKey.ahk
 
 /************************************************************************
  * @description 가상키 담당 관리 클래스
  * @author JKAKK
  * @date 2026/04/25
- * @version 0.0.1
+ * @version 0.0.2
  ***********************************************************************/
 class HotKeyManager
 {
