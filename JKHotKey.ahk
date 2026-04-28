@@ -1,3 +1,5 @@
+#Requires AutoHotkey v2.0
+#Include Utility.ahk
 /************************************************************************
  * @description ahk v2 HotKey() 를 객체로 래핑 용도
  * @author JKAKK
@@ -9,6 +11,17 @@
 class JKHotKey
 {
     ; MARK: 변수 영역
+
+    ; /** @type {String} */
+    ; _uid := ""
+    ; /**
+    ;  * #### 객체 식별용 uid
+    ;  * @type {String} 
+    ;  * @default ""
+    ;  * @readonly
+    ;  * @description 키이름 + pos위치 + 콜백함수id + 태그 를 조합한 전문
+    ;  */
+    ; UID => this._uid
 
     /** @type {bool} */
     _isActive := false
@@ -31,7 +44,15 @@ class JKHotKey
         }
     }
 
-    ; 콜백 함수를 담은 변수
+    /**
+     * #### 가상키 이름 전문으로 넣어야함
+     * @type {String} 
+     * @default ""
+     * @example keyName := "$F1 up"
+     */
+    keyName := ""
+
+    /** @type {Func|BoundFunc} */
     _callback := ""
     /**
      * #### 콜백 함수를 담은 변수
@@ -49,22 +70,57 @@ class JKHotKey
         }
     }
 
-    ; @@ 나머지 변수들 추가 예정
-    ; 옵션 | $, *, ~ 같은 앞에 붙이던 것들
+    /**
+     * #### 가상키 생성시 옵션
+     * @type {String} 
+     * @default ""
+     * @description 주로 "On" "Off" 넣거나 생략
+     */
+    option := ""
+
+    /**
+     * #### 가상키 입력 위치
+     * @type {Vector2d} 
+     * @default null
+     */
+    pos := Vector2d()
+
+    /**
+     * #### 가상키 태그
+     * @type {String} 
+     * @default ""
+     * @description 구분용 태그
+     */
+    tag := ""
+
+    /**
+     * #### 가상키 설명
+     * @type {String} 
+     * @default "없음"
+     */
+    desc := ""
 
     ; MARK: 함수 영역
     ; 생성자
-    __New(keyName, callback, option := "", tag := "", desc := "없음")
+    __New(keyName, callback, option := "", pos := Vector2d(), tag := "", desc := "없음")
     {
 
         this.keyName := keyName
         this.option := option
+        this.pos := pos
         this.tag := tag
         this.desc := desc
 
         this.IsActive := false
-        
         this.Callback := Callback
+
+        ; 옵션이 바로 시작이면 활성화
+        if(option == "On")
+            this.Bind()
+
+            
+        ; ; XXX UID 생성
+        ; this._uid := this.keyName . "_" . this.pos.ToString() . "_" . String(this.Callback) . "_" . this.tag
     }
 
     ; 함수 바인드 및 핫키 등록

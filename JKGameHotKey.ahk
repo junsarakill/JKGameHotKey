@@ -380,6 +380,8 @@ class AppManager
             this._isScriptActive := value
             ; 현재 가상키를 제거 처리
             HotKeyManager.RemoveHotKey()
+
+            this.ClearOverlay()
             ; true로 변경될때는 isactive의 활성 유무 다시 체크
             if(value == true)
                 this.IsActive := this.FindSheetName(this.curTargetTitle)

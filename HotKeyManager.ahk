@@ -19,7 +19,12 @@ class HotKeyManager
      */
     static curHKInfo := HotKeyInfo()
 
-    ; @@ 전체 가상키 객체 풀 [$키이름전문] : 핫키객체
+    /**
+     * #### 전체 가상키 오브젝트 풀
+     * @type {Map} 
+     * @default null
+     * @example hotKeyObjPoolMap[keyName] := oneHotKey
+     */
     static hotKeyObjPoolMap := Map()
 
     /**
@@ -64,6 +69,7 @@ class HotKeyManager
     /**
      * #### 가상키 생성
      * *
+     * @see JKHotKey
      * @param {HotKeyInfo} hkInfo - 가상키 데이터
      * @returns {void}
      */
@@ -71,12 +77,35 @@ class HotKeyManager
     {
         for , keyData in hkInfo.hotKeyMap
         {
+            ; @@ 핫키 풀에 이미 있으면 업데이트 하는 로직 필요.
+
             ; 타입 체크
             if(keyData.type = "KEY")
             {
                 ; 핫 키 생성
-                Hotkey("$" keyData.name, ObjBindMethod(this, "OnKeyDown"), "On")
-                Hotkey("$" keyData.name " up", ObjBindMethod(this, "OnKeyUp"), "On")
+                newDownHKName := "$" . keyData.name
+                if(this.hotKeyObjPoolMap.Has(newDownHKName))
+                {
+                    this.hotKeyObjPoolMap[newDownHKName].Bind()
+                }
+                else
+                {
+                    newDownHK := JKHotKey(newDownHKName, ObjBindMethod(this, "OnKeyDown"), "On", keyData.pos, , keyData.description)
+                    ; 풀에 추가
+                    this.hotKeyObjPoolMap[newDownHKName] := newDownHK
+                }
+                
+
+                newUpHKName := "$" . keyData.name . " up"
+                if(this.hotKeyObjPoolMap.Has(newUpHKName))
+                {
+                    this.hotKeyObjPoolMap[newUpHKName].Bind()
+                }
+                else
+                {
+                    newUpHK := JKHotKey(newUpHKName, ObjBindMethod(this, "OnKeyUp"), "On", keyData.pos, , keyData.description)
+                    this.hotKeyObjPoolMap[newUpHKName] := newUpHK
+                }
             }
         }
     }  
@@ -103,16 +132,11 @@ class HotKeyManager
      */
     static RemoveHotKey()
     {
-        ; 핫키 제거
-        for , keyData in this.curHKInfo.hotKeyMap
+        ; 핫키 비활성화
+        for , oneHKObj in this.hotKeyObjPoolMap
         {
-            ; 타입 체크
-            if(keyData.type = "KEY")
-            {                               
-                Hotkey("$" keyData.name, "Off") ; 핫키 비활성화
-                Hotkey("$" keyData.name " up", "Off") ; 핫키 비활성화
-            }
-        }                                   
+            oneHKObj.Unbind()
+        }                                
         
         this.curHKInfo.hotKeyMap := Map()
     }
@@ -126,34 +150,45 @@ class HotKeyManager
      */
     static GetKeyPos(&pos2D, key)
     {
-        ; $ 잘라내기
-        key := StrReplace(key, "$")
-        key := StrReplace(key, " up")
+        ; ToolTip(key)
+
+        if(!this.hotKeyObjPoolMap.Has(key))
+            return false
+
+        /** @type {JKHotKey} */
+        pos2D := this.hotKeyObjPoolMap[key].pos
+
+
+        ; ; $ 잘라내기
+        ; key := StrReplace(key, "$")
+        ; key := StrReplace(key, " up")
 
         ; 핫 키 인지 확인
-        if(!this.curHKInfo.hotKeyMap.Has(key))
-            return false
+        ; if(!this.curHKInfo.hotKeyMap.Has(key))
+        ;     return false
 
-        if(this.curHKInfo.hotKeyMap[key].type != "KEY")
-            return false
+        ; if(this.curHKInfo.hotKeyMap[key].type != "KEY")
+        ;     return false
 
-        ; 해당 키 좌표 가져오기
-        pos2D := this.curHKInfo.hotKeyMap[key].pos
+        ; ; 해당 키 좌표 가져오기
+        ; pos2D := this.curHKInfo.hotKeyMap[key].pos
 
         return true
     }
 
     /**
+     * ;@@ 나중에 통합 해보기 objmethodbind 가 인자 여러개 가능해보임 분기처리
      * #### 클릭 이벤트 : 입력 가능시
      * *
      * @see HotKeyManager.CreateHotKey - 바인딩 위치
-     * @param {String} hotKey - 키 이름
+     * @param {String} keyName - 키 이름
      * @returns {void}
      */
-    static OnKeyDown(hotKey)
+    static OnKeyDown(keyName)
     {
+        ToolTip(keyName)
         ; 좌표 가져오기 및 입력 체크| 입력 불가시 return
-        if(!this.GetKeyPos(&pos2D, hotKey))
+        if(!this.GetKeyPos(&pos2D, keyName))
             return
         
         ; 현재 활성창 체크
@@ -169,13 +204,13 @@ class HotKeyManager
      * #### 릴리스 이벤트 : 입력 가능시
      * *
      * @see HotKeyManager.CreateHotKey - 바인딩 위치
-     * @param {String} hotKey - 키 이름
+     * @param {String} keyName - 키 이름
      * @returns {void}
      */
-    static OnKeyUp(hotKey)
+    static OnKeyUp(keyName)
     {   
         ; 좌표 가져오기 및 입력 체크| 입력 불가시 return
-        if(!this.GetKeyPos(&pos2D, hotKey))
+        if(!this.GetKeyPos(&pos2D, keyName))
             return
         
         ; 현재 활성창 체크
