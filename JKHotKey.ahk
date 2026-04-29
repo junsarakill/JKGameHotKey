@@ -141,6 +141,18 @@ class JKHotKey
         this.IsActive := !this.IsActive
     }
 
+    /**
+     * #### 키 데이터 받아서 가상키 업데이트
+     * @see KeyData
+     * @param {KeyData} keyData - 새 가상키 데이터
+     * @returns {void}
+     */
+    Update(keyData)
+    {
+        this.pos := keyData.pos
+        this.desc := keyData.description
+    }
+
     ; 자괴
     Destroy()
     {

@@ -7,48 +7,6 @@
 
 ; MARK: 클래스 선언
 
-/** 가상키 데이터 */
-class KeyData
-{
-    /** @type {String} */
-    name := ""
-
-    /** @type {Vector2d} */
-    pos := Vector2d()
-
-    /** @type {String} */
-    type := ""
-
-    /** @type {String} */
-    description := ""
-
-    /**
-     * #### 생성자
-     * *
-     * @param {Map} sheetDataMap - 가상키 데이터 시트 맵 | 헤더 name, x, y, type, description
-     * @returns {void}
-     */
-    __New(sheetDataMap := [])
-    {
-        this.name := sheetDataMap["name"]
-        this.pos := Vector2d(sheetDataMap["x"], sheetDataMap["y"])
-        this.type := sheetDataMap["type"]
-        this.description := sheetDataMap["description"]
-    }
-
-    /**
-     * #### 클래스 데이터 출력
-     * *
-     * @returns {String}
-     */
-    ToString()
-    {
-        return Format("name : {1}, pos : {2}, type : {3}, desc : {4}"
-        , this.name, this.pos.ToString(), this.type, this.description)
-    }
-}
-
-
 /** 가상키 데이터, 오버레이 객체를 전부 가지고 있는 청사진 클래스 */
 class HotKeyInfo
 {

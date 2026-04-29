@@ -63,66 +63,69 @@ class HotKeyManager
     {
         this.curHKInfo := hkInfo
 
-        this.CreateHotKey(this.curHKInfo)
+        this.CreateAllHotKey(this.curHKInfo)
     }
 
     /**
      * #### 가상키 생성
      * *
-     * @see JKHotKey
+     * @see JKHotKey|@see HotKeyInfo
      * @param {HotKeyInfo} hkInfo - 가상키 데이터
      * @returns {void}
      */
-    static CreateHotKey(hkInfo)
+    static CreateAllHotKey(hkInfo)
     {
         for , keyData in hkInfo.hotKeyMap
         {
-            ; @@ 핫키 풀에 이미 있으면 업데이트 하는 로직 필요.
-
-            ; 타입 체크
-            if(keyData.type = "KEY")
-            {
-                ; 핫 키 생성
-                newDownHKName := "$" . keyData.name
-                if(this.hotKeyObjPoolMap.Has(newDownHKName))
-                {
-                    this.hotKeyObjPoolMap[newDownHKName].Bind()
-                }
-                else
-                {
-                    newDownHK := JKHotKey(newDownHKName, ObjBindMethod(this, "OnKeyDown"), "On", keyData.pos, , keyData.description)
-                    ; 풀에 추가
-                    this.hotKeyObjPoolMap[newDownHKName] := newDownHK
-                }
-                
-
-                newUpHKName := "$" . keyData.name . " up"
-                if(this.hotKeyObjPoolMap.Has(newUpHKName))
-                {
-                    this.hotKeyObjPoolMap[newUpHKName].Bind()
-                }
-                else
-                {
-                    newUpHK := JKHotKey(newUpHKName, ObjBindMethod(this, "OnKeyUp"), "On", keyData.pos, , keyData.description)
-                    this.hotKeyObjPoolMap[newUpHKName] := newUpHK
-                }
-            }
+            ; 핫키 가져오기
+            this.GetOrCreateHotKey(keyData, "down")
+            this.GetOrCreateHotKey(keyData, "up")
         }
     }  
 
-    ; @@ 가상키 오브젝트 풀에서 받아오기
-    static GetHotKey(fullKeyName, methodName)
+    /**
+     * #### 핫키 데이터 있으면 재사용, 없으면 생성
+     * *
+     * @see KeyData
+     * @param {KeyData} keyData - 핫키 데이터
+     * @param {String} inputType - 실제 키 입력 타입 | down, up
+     * @returns {bool} - 제작 성공
+     */
+    static GetOrCreateHotKey(keyData, inputType := "down")
     {
-        ; 오브젝트 풀에 있으면 재사용
-        if(this.hotKeyObjPoolMap.Has(fullKeyName))
-        {
-            /** @type {} */
-            hkObj := this.hotKeyObjPoolMap[fullKeyName]
-            
-        }
-        
+        ; 타입 체크
+        if(keyData.type != "KEY")
+            return false
 
-    } 
+        newHKName := "$" . keyData.name
+        bindMethodName := ""
+        ; 인풋 타입에 따라 결정
+        switch  inputType {
+            case "down":
+                bindMethodName := "OnKeyDown"
+            case "up":
+                newHKName .= " up"
+                bindMethodName := "OnKeyUp"
+
+            default:
+                ToolTip("잘못된 가상키 입력 타입 요청: " . keyData.ToString())
+                return false
+        }
+
+        ; 해당 핫키가 이미 생성된 경우 내용 업데이트 및 활성화
+        if(this.hotKeyObjPoolMap.Has(newHKName))
+        {
+            this.hotKeyObjPoolMap[newHKName].Update(keyData)
+            this.hotKeyObjPoolMap[newHKName].Bind()
+        }
+        ; 없으면 새로 생성
+        else
+        {
+            newHotKey := JKHotKey(newHKName, ObjBindMethod(this, bindMethodName), "On", keyData.pos, , keyData.description)
+            ; 풀에 추가
+            this.hotKeyObjPoolMap[newHKName] := newHotKey
+        }
+    }
 
     /**
      * #### 가상키 초기화
@@ -153,7 +156,10 @@ class HotKeyManager
         ; ToolTip(key)
 
         if(!this.hotKeyObjPoolMap.Has(key))
+        {
+            ToolTip("비존재 키 요청: " . key)
             return false
+        }
 
         /** @type {JKHotKey} */
         pos2D := this.hotKeyObjPoolMap[key].pos
@@ -186,7 +192,7 @@ class HotKeyManager
      */
     static OnKeyDown(keyName)
     {
-        ToolTip(keyName)
+        ; ToolTip(keyName)
         ; 좌표 가져오기 및 입력 체크| 입력 불가시 return
         if(!this.GetKeyPos(&pos2D, keyName))
             return
