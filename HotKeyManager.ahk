@@ -11,14 +11,6 @@
 class HotKeyManager
 {
     ; MARK: 변수 영역
-
-    /**
-     * #### 현재 전체 가상키 데이터
-     * @type {HotKeyInfo} 
-     * @default null
-     */
-    static curHKInfo := HotKeyInfo()
-
     /**
      * #### 전체 가상키 오브젝트 풀
      * @type {Map} 
@@ -61,9 +53,7 @@ class HotKeyManager
      */
     static SetupHotKey(hkInfo)
     {
-        this.curHKInfo := hkInfo
-
-        this.CreateAllHotKey(this.curHKInfo)
+        this.CreateAllHotKey(hkInfo)
     }
 
     /**
@@ -141,7 +131,7 @@ class HotKeyManager
             oneHKObj.Unbind()
         }                                
         
-        this.curHKInfo.hotKeyMap := Map()
+        ; this.curHKInfo.hotKeyMap := Map()
     }
 
     /**
@@ -163,21 +153,6 @@ class HotKeyManager
 
         /** @type {JKHotKey} */
         pos2D := this.hotKeyObjPoolMap[key].pos
-
-
-        ; ; $ 잘라내기
-        ; key := StrReplace(key, "$")
-        ; key := StrReplace(key, " up")
-
-        ; 핫 키 인지 확인
-        ; if(!this.curHKInfo.hotKeyMap.Has(key))
-        ;     return false
-
-        ; if(this.curHKInfo.hotKeyMap[key].type != "KEY")
-        ;     return false
-
-        ; ; 해당 키 좌표 가져오기
-        ; pos2D := this.curHKInfo.hotKeyMap[key].pos
 
         return true
     }
@@ -227,20 +202,4 @@ class HotKeyManager
         MouseClick('L',pos2D.x,pos2D.y, 1,2,'U')
         return                       
     }
-
-    /** ;@@ 가상키 객체 오브젝트 풀링화
-     * 현재 hotkey() 객체를 보유하고 있지 않음. 간접적으로 설정중.
-     * 1. 일단 핫키 객체를 보유할 맵을 추가 [$키이름전문] : 핫키객체
-     * {@link HotKeyInfo}
-     * 
-     * 2. 생성시 해당 핫키가 존재 검사 및 없으면 생성/ 있으면 활성화 로직 추가 | OnEvent 로 바인딩 함수 변경
-     * {@link HotKeyManager.CreateHotKey}
-     * 
-     * 3. 비활성화 시 제거 대신 풀에 있는 핫키 비활성화.| 오버레이도 추후 같은 로직으로 생성/비활성화
-     * {@link HotKeyInfo.ClearHotKey}
-     * 
-     * 미리 만들진 말고 lazy intial 로 생성한 만큼 저장해두기
-     */
-
-
 }
