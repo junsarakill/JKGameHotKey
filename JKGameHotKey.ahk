@@ -3,18 +3,56 @@
 #Include Lib\jsongo_AHKv2-main/src/jsongo.v2.ahk
 #Include Utility.ahk
 #Include SetGameDefaultPosition.ahk
-#Include HotKeyManager.ahk
 
 ; MARK: 클래스 선언
 
-/** 가상키 데이터, 오버레이 객체를 전부 가지고 있는 청사진 클래스 */
+/** 가상키 데이터 */
+class KeyData
+{
+    /** @type {String} */
+    name := ""
+
+    /** @type {Vector2d} */
+    pos := Vector2d()
+
+    /** @type {String} */
+    type := ""
+
+    /** @type {String} */
+    description := ""
+
+    /**
+     * #### 생성자
+     * *
+     * @param {Map} sheetDataMap - 가상키 데이터 시트 맵 | 헤더 name, x, y, type, description
+     * @returns {void}
+     */
+    __New(sheetDataMap := [])
+    {
+        this.name := sheetDataMap["name"]
+        this.pos := Vector2d(sheetDataMap["x"], sheetDataMap["y"])
+        this.type := sheetDataMap["type"]
+        this.description := sheetDataMap["description"]
+    }
+
+    /**
+     * #### 클래스 데이터 출력
+     * *
+     * @returns {String}
+     */
+    ToString()
+    {
+        return Format("name : {1}, pos : {2}, type : {3}, desc : {4}"
+        , this.name, this.pos.ToString(), this.type, this.description)
+    }
+}
+
 class HotKeyInfo
 {
     /**
      * #### 가상키 데이터 맵
      * @type {Map} 
      * @default null
-     * @see keyData
      * @example for key, keyData in this.hotKeyMap
      */
     hotKeyMap := Map()
@@ -23,10 +61,49 @@ class HotKeyInfo
      * #### 가상키 오버레이 맵
      * @type {Map} 
      * @default null
-     * @see OverlayInfo
      * @example for guiHwnd , overlayInfo in this.overlayMap
      */
     overlayMap := Map()
+
+    /**
+     * #### 가상키 초기화
+     * *
+     * @description 가상키 비활성화, 오버레이 gui 제거, 맵 초기화
+     * @returns {void}
+     */
+    ClearHotKey()
+    {
+        ; 핫키 제거
+        for , keyData in this.hotKeyMap
+        {
+            ; 타입 체크
+            if(keyData.type = "KEY")
+            {                               
+                Hotkey("$" keyData.name, "Off") ; 핫키 비활성화
+                Hotkey("$" keyData.name " up", "Off") ; 핫키 비활성화
+            }
+        }                                   
+        
+        this.hotKeyMap := Map()
+
+        ; 오버레이 제거
+        this.ClearOverlay()
+    }
+
+    /**
+     * #### 오버레이 초기화
+     * *
+     * @returns {void}
+     */
+    ClearOverlay()
+    {
+        for , info in this.overlayMap
+        {
+            info.Destroy()
+        }
+
+        this.overlayMap := Map()
+    }
 }
 
 /**
@@ -208,19 +285,19 @@ class SettingData
  * 2. 포커스 체크 딜리게이트 등록 | {@link AppManager.BindFocusChange} -> {@link AppManager.ShellHook}
  * -> 포커스 체크 | {@link AppManager.CheckFocus}
  * -> 현재 매핑 게임명과 같은지 검사
- * -> 다르면 키매핑 제거 | {@link HotKeyManager.RemoveHotKey}
+ * -> 다르면 키매핑 제거 | {@link AppManager.RemoveHotKey}
  * -> 다르면 시트에 해당 게임명 있는지 검사 | {@link AppManager.FindGameName}
  *
  * 있으면 키매핑 데이터 불러오기 | {@link AppManager.LoadKeyData}
- * -> 해당 게임 키매핑 생성 | {@link HotKeyManager.CreateHotKey}  
+ * -> 해당 게임 키매핑 생성 | {@link AppManager.CreateHotKey}  
  * 
  * 없으면 전체 프로세스에 목표 게임 존재 체크
  * -> 없으면 스크립트 종료 {@link AppManager.CloseScript}
  * 
- * 3. 가상키 누르기 | {@link  HotKeyManager.OnKeyDown}
- * -> 해당 키 좌표 가져오기 | {@link  HotKeyManager.GetKeyPos}
- * -> 해당 좌표 클릭 | {@link HotKeyManager.OnKeyDown}
- * -> 가상키 떼기 | {@link HotKeyManager.OnKeyUp}
+ * 3. 가상키 누르기 | {@link  AppManager.ClickPos}
+ * -> 해당 키 좌표 가져오기 | {@link  AppManager.GetKeyPos}
+ * -> 해당 좌표 클릭 | {@link AppManager.MouseClick}
+ * -> 가상키 떼기 | {@link AppManager.ReleaseBtn}
  * 
  */
 
@@ -274,15 +351,12 @@ class AppManager
         set {
             this._curTargetTitle := value
 
-            ; 가상키 매니저에 업데이트
-            HotKeyManager.OnTargetChanged(value)
-
-            ; 현재 오버레이 제거
-            this.ClearOverlay()
+            ; 변경되었으니 키 매핑 제거
+            this.RemoveHotKey()
 
             ; 시트에 있는 게임인지 체크해서 활성 유무 변경
             this.IsActive := this.FindSheetName(value)
-            /** {@link AppManager.OnActiveChanged} */ 
+            ; {@link AppManager.OnActiveChanged}
         }
     }
     
@@ -337,9 +411,7 @@ class AppManager
         set {
             this._isScriptActive := value
             ; 현재 가상키를 제거 처리
-            HotKeyManager.RemoveHotKey()
-
-            this.ClearOverlay()
+            this.RemoveHotKey()
             ; true로 변경될때는 isactive의 활성 유무 다시 체크
             if(value == true)
                 this.IsActive := this.FindSheetName(this.curTargetTitle)
@@ -368,6 +440,7 @@ class AppManager
      * *
      * @returns {void}
      */
+    
     static WaitStartProgram()
     {
         this.checkStart := true
@@ -378,6 +451,7 @@ class AppManager
      * *
      * @returns {void}
      */
+    
     static BindFocusChange()
     {
         ; 스크립트 핸들을 등록합니다.
@@ -387,6 +461,7 @@ class AppManager
         OnMessage(DllCall("RegisterWindowMessage", "str", "SHELLHOOK"), ObjBindMethod(this, "ShellHook")) 
     }
 
+    ; 포커스 변경됨
     /**
      * #### 윈도우 포커스 변경시 작동
      * *
@@ -435,7 +510,7 @@ class AppManager
     /**
      * #### 활성 상태 변경시 발동
      * *
-     * @see AppManager.IsActive
+     * {@link AppManager.IsActive}
      * @description 목표에 맞는 가상키 생성 또는 스크립트 종료 체크
      * @returns {void}
      */
@@ -448,9 +523,10 @@ class AppManager
             processHandle := WinActive(this.CurTargetTitle)
             ; 키 매핑 시트 데이터 가져오기
             this.curHKInfo.hotKeyMap := this.LoadKeyData(this.CurTargetTitle)
-            ; 가상키 매니저에 데이터 업데이트
-            HotKeyManager.SetupHotKey(this.curHKInfo)
 
+            ; 가상키 생성
+            this.CreateHotKey(this.curHKInfo)
+            
             ; 오버레이 생성
             this.CreateOverlay(processHandle, this.curHKInfo)
         }
@@ -539,7 +615,25 @@ class AppManager
         return sheetName
     }
 
-    ; MARK: 오버레이 관리 영역
+    /**
+     * #### 가상키 생성
+     * *
+     * @param {HotKeyInfo} curHKInfo - 가상키 데이터
+     * @returns {void}
+     */
+    static CreateHotKey(curHKInfo)
+    {
+        for , keyData in curHKInfo.hotKeyMap
+        {
+            ; 타입 체크
+            if(keyData.type = "KEY")
+            {
+                ; 핫 키 생성
+                Hotkey("$" keyData.name, ObjBindMethod(this, "ClickPos"), "On")
+                Hotkey("$" keyData.name " up", ObjBindMethod(this, "ReleaseBtn"), "On")
+            }
+        }
+    }
 
     /**
      * #### 가상키 오버레이 생성
@@ -594,6 +688,86 @@ class AppManager
     }
 
     /**
+     * #### 현재 가상키 전체 제거
+     * *
+     * @returns {void}
+     */
+    static RemoveHotKey()
+    {
+        this.curHKInfo.ClearHotKey()
+    }
+
+    /**
+     * #### 해당 키 좌표 가져오기
+     * *
+     * @param {Vector2d} pos2D - 해당 가상키 좌표
+     * @param {String} key - 키 이름
+     * @returns {Bool} - 가져오기 성공 유무
+     */
+    static GetKeyPos(&pos2D, key)
+    {
+        ; $ 잘라내기
+        key := StrReplace(key, "$")
+        key := StrReplace(key, " up")
+
+        ; 핫 키 인지 확인
+        if(!this.curHKInfo.hotKeyMap.Has(key))
+            return false
+
+        if(this.curHKInfo.hotKeyMap[key].type != "KEY")
+            return false
+
+        ; 해당 키 좌표 가져오기
+        pos2D := this.curHKInfo.hotKeyMap[key].pos
+
+        return true
+    }
+
+    /**
+     * #### 클릭 이벤트 : 입력 가능시
+     * *
+     * @see AppManager.CreateHotKey - 바인딩 위치
+     * @param {String} hotKey - 키 이름
+     * @returns {void}
+     */
+    static ClickPos(hotKey)
+    {
+        ; 좌표 가져오기 및 입력 체크| 입력 불가시 return
+        if(!this.GetKeyPos(&pos2D, hotKey))
+            return
+        
+        ; 현재 활성창 체크
+        if(!WinActive(this.CurTargetTitle))
+            return
+
+        ; 해당 좌표 클릭
+        MouseClick('L',pos2D.x,pos2D.y, 1,2,'D')
+        return
+    }
+
+    /**
+     * #### 릴리스 이벤트 : 입력 가능시
+     * *
+     * @see AppManager.CreateHotKey - 바인딩 위치
+     * @param {String} hotKey - 키 이름
+     * @returns {void}
+     */
+    static ReleaseBtn(hotKey)
+    {   
+        ; 좌표 가져오기 및 입력 체크| 입력 불가시 return
+        if(!this.GetKeyPos(&pos2D, hotKey))
+            return
+        
+        ; 현재 활성창 체크
+        if(!WinActive(this.CurTargetTitle))
+            return
+
+        ; 해당 좌표 클릭 해제
+        MouseClick('L',pos2D.x,pos2D.y, 1,2,'U')
+        return                       
+    }
+
+    /**
      * #### 오버레이 토글
      * *
      * @returns {void}
@@ -608,24 +782,7 @@ class AppManager
         if(this.SETTINGS.enableOverlay)
             this.CreateOverlay(processHandle, this.curHKInfo)
         else
-            this.ClearOverlay()
-    }
-
-    ; 오버레이 초기화
-    /**
-     * #### 오버레이 초기화
-     * *
-     * @see OverlayInfo
-     * @returns {void}
-     */
-    static ClearOverlay()
-    {
-        for , overlayObj in this.curHKInfo.overlayMap
-        {
-            overlayObj.Destroy()
-        }
-
-        this.curHKInfo.overlayMap := Map()
+            this.curHKInfo.ClearOverlay()
     }
 
     /**
