@@ -70,6 +70,9 @@ class HotKeyManager
             ; 핫키 가져오기
             this.GetOrCreateHotKey(keyData, "down")
             this.GetOrCreateHotKey(keyData, "up")
+
+            ; @@ 최적화용 일시 정지
+            Sleep(1)
         }
     }  
 

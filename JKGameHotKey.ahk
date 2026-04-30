@@ -356,7 +356,7 @@ class AppManager
 
             ; 시트에 있는 게임인지 체크해서 활성 유무 변경
             this.IsActive := this.FindSheetName(value)
-            ; {@link AppManager.OnActiveChanged}
+            /** {@link AppManager.OnActiveChanged} */
         }
     }
     
@@ -684,6 +684,9 @@ class AppManager
             
             ; 오버레이 맵에 추가
             curHKInfo.overlayMap[newOverlay.aGUI.Hwnd] := newOverlay
+
+            ; @@ 최적화용 일시 정지
+            Sleep(1)
         }
     }
 
@@ -812,6 +815,12 @@ class AppManager
 
 
 ; MARK: 프로그램 실행 영역
+
+; 우선순위 설정
+ProcessSetPriority("High")
+; ListLines(false)
+; KeyHistory(0)
+A_MaxHotKeysPerInterval := 200
 
 ; 관리자 권한 실행
 JKUtility.RunAdmin()
