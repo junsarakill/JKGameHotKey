@@ -1,24 +1,22 @@
 #Requires AutoHotkey v2.0
 #Include Utility.ahk
+#Include JKHotKey.ahk
 
 /************************************************************************
  * @description 가상키 담당 관리 클래스
  * @author JKAKK
  * @date 2026/04/25
- * @version 0.0.1
+ * @version 0.0.2
  ***********************************************************************/
 class HotKeyManager
 {
     ; MARK: 변수 영역
-
     /**
-     * #### 현재 전체 가상키 데이터
-     * @type {HotKeyInfo} 
+     * #### 전체 가상키 오브젝트 풀
+     * @type {Map} 
      * @default null
+     * @example hotKeyObjPoolMap[keyName] := oneHotKey
      */
-    static curHKInfo := HotKeyInfo()
-
-    ; @@ 전체 가상키 객체 풀 [$키이름전문] : 핫키객체
     static hotKeyObjPoolMap := Map()
 
     /**
@@ -55,44 +53,69 @@ class HotKeyManager
      */
     static SetupHotKey(hkInfo)
     {
-        this.curHKInfo := hkInfo
-
-        this.CreateHotKey(this.curHKInfo)
+        this.CreateAllHotKey(hkInfo)
     }
 
     /**
      * #### 가상키 생성
      * *
+     * @see JKHotKey|@see HotKeyInfo
      * @param {HotKeyInfo} hkInfo - 가상키 데이터
      * @returns {void}
      */
-    static CreateHotKey(hkInfo)
+    static CreateAllHotKey(hkInfo)
     {
         for , keyData in hkInfo.hotKeyMap
         {
-            ; 타입 체크
-            if(keyData.type = "KEY")
-            {
-                ; 핫 키 생성
-                Hotkey("$" keyData.name, ObjBindMethod(this, "OnKeyDown"), "On")
-                Hotkey("$" keyData.name " up", ObjBindMethod(this, "OnKeyUp"), "On")
-            }
+            ; 핫키 가져오기
+            this.GetOrCreateHotKey(keyData, "down")
+            this.GetOrCreateHotKey(keyData, "up")
         }
     }  
 
-    ; @@ 가상키 오브젝트 풀에서 받아오기
-    static GetHotKey(fullKeyName, methodName)
+    /**
+     * #### 핫키 데이터 있으면 재사용, 없으면 생성
+     * *
+     * @see KeyData
+     * @param {KeyData} keyData - 핫키 데이터
+     * @param {String} inputType - 실제 키 입력 타입 | down, up
+     * @returns {bool} - 제작 성공
+     */
+    static GetOrCreateHotKey(keyData, inputType := "down")
     {
-        ; 오브젝트 풀에 있으면 재사용
-        if(this.hotKeyObjPoolMap.Has(fullKeyName))
-        {
-            /** @type {} */
-            hkObj := this.hotKeyObjPoolMap[fullKeyName]
-            
-        }
-        
+        ; 타입 체크
+        if(keyData.type != "KEY")
+            return false
 
-    } 
+        newHKName := "$" . keyData.name
+        bindMethodName := ""
+        ; 인풋 타입에 따라 결정
+        switch  inputType {
+            case "down":
+                bindMethodName := "OnKeyDown"
+            case "up":
+                newHKName .= " up"
+                bindMethodName := "OnKeyUp"
+
+            default:
+                ToolTip("잘못된 가상키 입력 타입 요청: " . keyData.ToString())
+                return false
+        }
+
+        ; 해당 핫키가 이미 생성된 경우 내용 업데이트 및 활성화
+        if(this.hotKeyObjPoolMap.Has(newHKName))
+        {
+            this.hotKeyObjPoolMap[newHKName].Update(keyData)
+            this.hotKeyObjPoolMap[newHKName].Bind()
+        }
+        ; 없으면 새로 생성
+        else
+        {
+            newHotKey := JKHotKey(newHKName, ObjBindMethod(this, bindMethodName), "On", keyData.pos, , keyData.description)
+            ; 풀에 추가
+            this.hotKeyObjPoolMap[newHKName] := newHotKey
+        }
+    }
 
     /**
      * #### 가상키 초기화
@@ -102,18 +125,13 @@ class HotKeyManager
      */
     static RemoveHotKey()
     {
-        ; 핫키 제거
-        for , keyData in this.curHKInfo.hotKeyMap
+        ; 핫키 비활성화
+        for , oneHKObj in this.hotKeyObjPoolMap
         {
-            ; 타입 체크
-            if(keyData.type = "KEY")
-            {                               
-                Hotkey("$" keyData.name, "Off") ; 핫키 비활성화
-                Hotkey("$" keyData.name " up", "Off") ; 핫키 비활성화
-            }
-        }                                   
+            oneHKObj.Unbind()
+        }                                
         
-        this.curHKInfo.hotKeyMap := Map()
+        ; this.curHKInfo.hotKeyMap := Map()
     }
 
     /**
@@ -125,34 +143,33 @@ class HotKeyManager
      */
     static GetKeyPos(&pos2D, key)
     {
-        ; $ 잘라내기
-        key := StrReplace(key, "$")
-        key := StrReplace(key, " up")
+        ; ToolTip(key)
 
-        ; 핫 키 인지 확인
-        if(!this.curHKInfo.hotKeyMap.Has(key))
+        if(!this.hotKeyObjPoolMap.Has(key))
+        {
+            ToolTip("비존재 키 요청: " . key)
             return false
+        }
 
-        if(this.curHKInfo.hotKeyMap[key].type != "KEY")
-            return false
-
-        ; 해당 키 좌표 가져오기
-        pos2D := this.curHKInfo.hotKeyMap[key].pos
+        /** @type {JKHotKey} */
+        pos2D := this.hotKeyObjPoolMap[key].pos
 
         return true
     }
 
     /**
+     * ;@@ 나중에 통합 해보기 objmethodbind 가 인자 여러개 가능해보임 분기처리
      * #### 클릭 이벤트 : 입력 가능시
      * *
      * @see HotKeyManager.CreateHotKey - 바인딩 위치
-     * @param {String} hotKey - 키 이름
+     * @param {String} keyName - 키 이름
      * @returns {void}
      */
-    static OnKeyDown(hotKey)
+    static OnKeyDown(keyName)
     {
+        ; ToolTip(keyName)
         ; 좌표 가져오기 및 입력 체크| 입력 불가시 return
-        if(!this.GetKeyPos(&pos2D, hotKey))
+        if(!this.GetKeyPos(&pos2D, keyName))
             return
         
         ; 현재 활성창 체크
@@ -168,13 +185,13 @@ class HotKeyManager
      * #### 릴리스 이벤트 : 입력 가능시
      * *
      * @see HotKeyManager.CreateHotKey - 바인딩 위치
-     * @param {String} hotKey - 키 이름
+     * @param {String} keyName - 키 이름
      * @returns {void}
      */
-    static OnKeyUp(hotKey)
+    static OnKeyUp(keyName)
     {   
         ; 좌표 가져오기 및 입력 체크| 입력 불가시 return
-        if(!this.GetKeyPos(&pos2D, hotKey))
+        if(!this.GetKeyPos(&pos2D, keyName))
             return
         
         ; 현재 활성창 체크
@@ -185,20 +202,4 @@ class HotKeyManager
         MouseClick('L',pos2D.x,pos2D.y, 1,2,'U')
         return                       
     }
-
-    /** ;@@ 가상키 객체 오브젝트 풀링화
-     * 현재 hotkey() 객체를 보유하고 있지 않음. 간접적으로 설정중.
-     * 1. 일단 핫키 객체를 보유할 맵을 추가 [$키이름전문] : 핫키객체
-     * {@link HotKeyInfo}
-     * 
-     * 2. 생성시 해당 핫키가 존재 검사 및 없으면 생성/ 있으면 활성화 로직 추가 | OnEvent 로 바인딩 함수 변경
-     * {@link HotKeyManager.CreateHotKey}
-     * 
-     * 3. 비활성화 시 제거 대신 풀에 있는 핫키 비활성화.| 오버레이도 추후 같은 로직으로 생성/비활성화
-     * {@link HotKeyInfo.ClearHotKey}
-     * 
-     * 미리 만들진 말고 lazy intial 로 생성한 만큼 저장해두기
-     */
-
-
 }
