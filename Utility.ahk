@@ -33,6 +33,47 @@ class Vector2d {
     }
 }
 
+/** 가상키 데이터 */
+class KeyData
+{
+    /** @type {String} */
+    name := ""
+
+    /** @type {Vector2d} */
+    pos := Vector2d()
+
+    /** @type {String} */
+    type := ""
+
+    /** @type {String} */
+    description := ""
+
+    /**
+     * #### 생성자
+     * *
+     * @param {Map} sheetDataMap - 가상키 데이터 시트 맵 | 헤더 name, x, y, type, description
+     * @returns {void}
+     */
+    __New(sheetDataMap := [])
+    {
+        this.name := sheetDataMap["name"]
+        this.pos := Vector2d(sheetDataMap["x"], sheetDataMap["y"])
+        this.type := sheetDataMap["type"]
+        this.description := sheetDataMap["description"]
+    }
+
+    /**
+     * #### 클래스 데이터 출력
+     * *
+     * @returns {String}
+     */
+    ToString()
+    {
+        return Format("name : {1}, pos : {2}, type : {3}, desc : {4}"
+        , this.name, this.pos.ToString(), this.type, this.description)
+    }
+}
+
 /** #### 범용 사용 클래스 */
 class JKUtility {
     ; MARK: 전역 변수 단
@@ -68,7 +109,7 @@ class JKUtility {
      * #### 우선 순위 있는 시트 데이터 불러오기
      * *
      * @param {String} csvFolderPath - 시트 폴더 경로
-     * @param {String} csvFileName - 시트 파일 이름
+     * @param {String} csvFileName - 시트 파일 이름 (확장자 없이)
      * @returns {Array} - 시트 데이터를 배열 { 맵[헤더] : 값 } 형태로 반환
      * @example 
      * sheetData := this.LoadPrioritySheetData(path, name)
