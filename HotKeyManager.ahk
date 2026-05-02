@@ -41,7 +41,7 @@ class HotKeyManager
         this.curTargetTitle := newTargetTitle
 
         ; 변경되었으니 키 매핑 제거
-        this.RemoveHotKey()
+        ; this.RemoveHotKey()
     }
 
     /**
@@ -133,8 +133,6 @@ class HotKeyManager
         {
             oneHKObj.Unbind()
         }                                
-        
-        ; this.curHKInfo.hotKeyMap := Map()
     }
 
     /**

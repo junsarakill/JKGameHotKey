@@ -278,7 +278,7 @@ class AppManager
             HotKeyManager.OnTargetChanged(value)
 
             ; 현재 오버레이 제거
-            this.ClearOverlay()
+            ; this.ClearOverlay()
 
             ; 시트에 있는 게임인지 체크해서 활성 유무 변경
             this.IsActive := this.FindSheetName(value)
@@ -319,6 +319,10 @@ class AppManager
     static IsActive {
         get => this._isActive
         set {
+            ; 비활성=>비활성 스킵
+            if(this._isActive == false && value == false)
+                return
+
             this._isActive := value
             ; 상태 변경
             this.OnActiveChanged()
@@ -441,6 +445,10 @@ class AppManager
      */
     static OnActiveChanged()
     {
+        ; 현재 가상키, 오버레이 제거
+        HotKeyManager.RemoveHotKey()
+        this.ClearOverlay()
+
         if(this.IsScriptActive && this.IsActive)
         {
             ; ToolTip("시트에 있음 키매핑 생성: " curTitle)
