@@ -25,7 +25,6 @@ class HotKeyManager
      * @default null
      */
     static curTargetTitle := ""
-    
 
     ; MARK: 함수 영역
 
@@ -49,11 +48,12 @@ class HotKeyManager
      * *
      * @description 데이터 참조로 받고 신규 가상키 생성
      * @param {HotKeyInfo} hkInfo - 새 가상키 데이터
+     * @param {BoundFunc} validCheckDel - 세션 유효 체크하는 딜리게이트
      * @returns {void}
      */
-    static SetupHotKey(hkInfo)
+    static SetupHotKey(hkInfo, validCheckDel)
     {
-        this.CreateAllHotKey(hkInfo)
+        this.CreateAllHotKey(hkInfo, validCheckDel)
     }
 
     /**
@@ -61,18 +61,26 @@ class HotKeyManager
      * *
      * @see JKHotKey|@see HotKeyInfo
      * @param {HotKeyInfo} hkInfo - 가상키 데이터
+     * @param {BoundFunc} validCheckDel - 세션 유효 체크하는 딜리게이트
      * @returns {void}
      */
-    static CreateAllHotKey(hkInfo)
+    static CreateAllHotKey(hkInfo, validCheckDel)
     {
         for , keyData in hkInfo.hotKeyMap
         {
+            ; 최적화용 일시 정지
+            Sleep(-1)
+
+            ; 최신 세션인지 검증
+            if(!validCheckDel.Call())
+            {
+                ; 예전꺼면 중단
+                return
+            }
+
             ; 핫키 가져오기
             this.GetOrCreateHotKey(keyData, "down")
             this.GetOrCreateHotKey(keyData, "up")
-
-            ; @@ 최적화용 일시 정지
-            Sleep(1)
         }
     }  
 
