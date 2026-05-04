@@ -672,9 +672,6 @@ class AppManager
             ; 설정에 따라 오버레이 활성화
             newOverlay.SetActive(this.SETTINGS.enableOverlay, option)
 
-            ; 오버레이 맵에 추가
-            curHKInfo.overlayMap[newOverlay.aGUI.Hwnd] := newOverlay
-
             ; 최신 세션인지 검증
             if(!validCheckDel.Call())
             {
@@ -684,7 +681,8 @@ class AppManager
                 return
             }
 
-            
+            ; 오버레이 맵에 추가
+            curHKInfo.overlayMap[newOverlay.aGUI.Hwnd] := newOverlay
         }
     }
 
