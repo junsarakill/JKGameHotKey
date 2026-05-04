@@ -1,6 +1,7 @@
 #Requires AutoHotkey v2.0
 #Include Utility.ahk
 #Include JKHotKey.ahk
+#Include JKSession.ahk
 
 /************************************************************************
  * @description 가상키 담당 관리 클래스
@@ -72,11 +73,11 @@ class HotKeyManager
             Sleep(-1)
 
             ; 최신 세션인지 검증
-            if(!validCheckDel.Call())
-            {
-                ; 예전꺼면 중단
-                return
-            }
+            ; if(!validCheckDel.Call())
+            ; {
+            ;     ; 예전꺼면 중단
+            ;     return
+            ; }
 
             ; 핫키 가져오기
             this.GetOrCreateHotKey(keyData, "down")

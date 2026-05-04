@@ -1,10 +1,12 @@
 #Requires AutoHotkey v2.0
 #Include Utility.ahk
+#Include JKSession.ahk
+
 /************************************************************************
  * @description ahk v2 HotKey() 를 객체로 래핑 용도
  * @author JKAKK
- * @date 2026/04/30
- * @version 0.0.2
+ * @date 2026/05/04
+ * @version 0.0.3
  ***********************************************************************/
 
 
@@ -12,16 +14,12 @@ class JKHotKey
 {
     ; MARK: 변수 영역
 
-    ; /** @type {String} */
-    ; _uid := ""
-    ; /**
-    ;  * #### 객체 식별용 uid
-    ;  * @type {String} 
-    ;  * @default ""
-    ;  * @readonly
-    ;  * @description 키이름 + pos위치 + 콜백함수id + 태그 를 조합한 전문
-    ;  */
-    ; UID => this._uid
+    /**
+     * #### 세션
+     * @type {JKSession} 
+     * @default null
+     */
+    session := unset
 
     /** @type {bool} */
     _isActive := false
@@ -38,7 +36,17 @@ class JKHotKey
 
             ; 활성 유무에 따라 핫키 바인드
             if(value)
+            {
+                ; 최신 세션인지 체크해서 아니면 자괴
+                if(!this.session.Valid())
+                {
+                    ToolTip("낡았어: " . this.keyName)
+
+                    return this.Destroy()
+                }
+
                 Hotkey(this.keyName, this.Callback, this.option)
+            }
             else
                 try Hotkey(this.keyName, "Off")
         }
@@ -104,6 +112,7 @@ class JKHotKey
     ; 생성자
     __New(keyName, callback, option := "", pos := Vector2d(), tag := "", desc := "없음")
     {
+        this.session := JKSession()
 
         this.keyName := keyName
         this.option := option
@@ -117,10 +126,6 @@ class JKHotKey
         ; 옵션이 바로 시작이면 활성화
         if(option == "On")
             this.Bind()
-
-            
-        ; ; XXX UID 생성
-        ; this._uid := this.keyName . "_" . this.pos.ToString() . "_" . String(this.Callback) . "_" . this.tag
     }
 
     ; 함수 바인드 및 핫키 등록
@@ -151,6 +156,7 @@ class JKHotKey
     {
         this.pos := keyData.pos
         this.desc := keyData.description
+        this.session.Update()
     }
 
     ; 자괴

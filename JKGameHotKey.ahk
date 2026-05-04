@@ -4,6 +4,7 @@
 #Include Utility.ahk
 #Include SetGameDefaultPosition.ahk
 #Include HotKeyManager.ahk
+#Include JKSession.ahk
 
 ; MARK: 클래스 선언
 
@@ -49,6 +50,9 @@ class OverlayInfo
     /** @type {String} */
     prevOption := ""
 
+    ; 세션
+    session := unset
+
     /**
      * @param {number} x 초기 X 좌표
      * @param {number} y 초기 Y 좌표
@@ -58,6 +62,7 @@ class OverlayInfo
     __New(x := 0, y := 0, text := "?") {
         this.pos := Vector2d(x,y)
         this.text := text
+        this.session := JKSession()
         ; @@ 여기서 제대로 인자 받아서 생성 시키는게 좋을듯?
         /** {@link AppManager.CreateOverlay} */
     }
@@ -73,6 +78,12 @@ class OverlayInfo
     {
         if(value)
         {
+            ; 최신 세션 체크해서 예전꺼면 자괴
+            if(!this.session.Valid())
+            {
+                return this.Destroy()
+            }
+
             ; 옵션 없으면 이전 옵션 재적용
             if(option = "")
                 option := this.prevOption
@@ -94,6 +105,7 @@ class OverlayInfo
      * @returns {void}
      */
     Destroy() {
+        try this.aGUI.Hide()
         try this.aGUI.Destroy()
         this.aGUI := unset
     }
@@ -429,17 +441,22 @@ class AppManager
         ; HSHELL_RUDEAPPACTIVATED || HSHELL_WINDOWACTIVATED
         if (wParam = 0x8004 || wParam = 4) 
         { 
-            ; lParam이 0이면 현재 활성 창의 핸들을 가져옵니다.
-            hwnd := lParam || WinExist("A") 
-
-            if(!hwnd) 
-                return
-
-            curTitle := WinGetTitle(hwnd)
-            ; ToolTip curTitle
-
-            AppManager.CheckFocus(curTitle)
+            SetTimer(ObjBindMethod(this, "AsyncCheckFocus", lParam), -1)
         }
+    }
+
+    ; 비동기 처리
+    static AsyncCheckFocus(lParam)
+    {
+        ; lParam이 0이면 현재 활성 창의 핸들을 가져옵니다.
+        hwnd := lParam || WinExist("A") 
+
+        if(!hwnd) 
+            return
+
+        curTitle := WinGetTitle(hwnd)
+
+        AppManager.CheckFocus(curTitle)
     }
 
     /**
@@ -469,7 +486,9 @@ class AppManager
     {
         ; 가상키 신규 세션
         local sessionNum := ++this.CurSessionNum
-        ; ToolTip("asd" . sessionNum)
+        JKSession.curSessionNum++
+        
+        ; ToolTip("asd" . JKSession.curSessionNum)
 
         ; 현재 가상키, 오버레이 제거
         HotKeyManager.RemoveHotKey()
@@ -659,7 +678,7 @@ class AppManager
             ; 최신 세션인지 검증
             if(!validCheckDel.Call())
             {
-                ToolTip("🚨 SetActive 직후 엇갈림 발생! 직접 파괴 실행")
+                ; ToolTip("🚨 SetActive 직후 엇갈림 발생! 직접 파괴 실행")
                 newOverlay.Destroy()
 
                 return
