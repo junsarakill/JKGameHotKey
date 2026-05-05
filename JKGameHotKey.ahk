@@ -6,9 +6,18 @@
 #Include HotKeyManager.ahk
 #Include JKSession.ahk
 
+/************************************************************************
+ * @description 스크립트 총괄 클래스
+ * @author JKAKK
+ * @date 2026/05/05
+ * @version 0.1.0
+ ***********************************************************************/
+
 ; MARK: 클래스 선언
 
-/** 가상키 데이터, 오버레이 객체를 전부 가지고 있는 청사진 클래스 */
+/** 가상키 데이터, 오버레이 객체를 전부 가지고 있는 청사진 클래스 
+ * @@ 오버레이는 매니저 단으로 분리할 예정
+*/
 class HotKeyInfo
 {
     /**
@@ -52,6 +61,9 @@ class OverlayInfo
 
     ; 세션
     session := unset
+    
+    ; 존재 유효 유무
+    isValid := true
 
     /**
      * @param {number} x 초기 X 좌표
@@ -63,6 +75,7 @@ class OverlayInfo
         this.pos := Vector2d(x,y)
         this.text := text
         this.session := JKSession()
+        this.isValid := true
         ; @@ 여기서 제대로 인자 받아서 생성 시키는게 좋을듯?
         /** {@link AppManager.CreateOverlay} */
     }
@@ -81,6 +94,9 @@ class OverlayInfo
             ; 최신 세션 체크해서 예전꺼면 자괴
             if(!this.session.Valid())
             {
+                JKUtility.Log(Format("[JKSession] ⚠ Invalid Detected! text : {1} (Object: {2} / Global: {3})`n"
+                    , this.text, this.session.insSessionNum, JKSession.curSessionNum))
+                
                 return this.Destroy()
             }
 
@@ -108,6 +124,7 @@ class OverlayInfo
         try this.aGUI.Hide()
         try this.aGUI.Destroy()
         this.aGUI := unset
+        this.isValid := false
     }
 
     ; 소멸자
@@ -436,8 +453,6 @@ class AppManager
      */
     static ShellHook(wParam, lParam, *) 
     {
-        ; ToolTip("wp:" wParam " lp:" lParam)
-
         ; HSHELL_RUDEAPPACTIVATED || HSHELL_WINDOWACTIVATED
         if (wParam = 0x8004 || wParam = 4) 
         { 
@@ -467,7 +482,6 @@ class AppManager
      */
     static CheckFocus(curTitle) 
     {
-        ; ToolTip("curtitle: " curTitle)
         ; 현재 목표 게임인지 체크
         if(this.CurTargetTitle = curTitle)
             return
@@ -485,36 +499,30 @@ class AppManager
     static OnActiveChanged()
     {
         ; 가상키 신규 세션
-        local sessionNum := ++this.CurSessionNum
         JKSession.curSessionNum++
-        
-        ; ToolTip("asd" . JKSession.curSessionNum)
 
+        JKUtility.Log("--------------------------------------------------`n")
+        JKUtility.Log(Format(">>> Global Session Updated to: {1}`n", JKSession.curSessionNum))
+        JKUtility.Log("--------------------------------------------------`n")
+        
         ; 현재 가상키, 오버레이 제거
         HotKeyManager.RemoveHotKey()
         this.ClearOverlay()
 
         if(this.IsScriptActive && this.IsActive)
         {
-            ; ToolTip("시트에 있음 키매핑 생성: " curTitle)
-
             processHandle := WinActive(this.CurTargetTitle)
             ; 키 매핑 시트 데이터 가져오기
             this.curHKInfo.hotKeyMap := this.LoadKeyData(this.CurTargetTitle)
 
-            ; 현재 세션 체크용 딜리게이트 지역 변수
-            local isValidDel := this.CheckSessionValid.Bind(this, sessionNum)
-
             ; 가상키 매니저에 데이터 업데이트
-            HotKeyManager.SetupHotKey(this.curHKInfo, isValidDel)
+            HotKeyManager.SetupHotKey(this.curHKInfo)
 
             ; 오버레이 생성
-            this.CreateOverlay(processHandle, this.curHKInfo, isValidDel)
+            this.CreateOverlay(processHandle, this.curHKInfo)
         }
         else if(this.checkStart)
         {
-            ; ToolTip("dow" curTitle)
-            
             ; 전체 프로세스에 시트 게임이 하나도 없는지 체크
             isEnd := true
             for row in this.sheetNameTable
@@ -529,7 +537,10 @@ class AppManager
             ; 없으면 스크립트 종료
             if(isEnd)
             {
-                ToolTip("목표 게임 없음. 핫 키 종료")
+                exitMsg := "목표 게임 없음. 핫 키 종료"
+                JKUtility.Log(exitMsg)
+                ToolTip(exitMsg)
+
                 Sleep(1000) 
                 this.CloseScript()
             }
@@ -596,27 +607,6 @@ class AppManager
         return sheetName
     }
 
-    ; 세션 유효성 체크
-    /**
-     * #### 세션 유효성 체크
-     * *
-     * @param {Number} sessionNum - 세션번호
-     * @returns {bool} - 유효 유무
-     */
-    static CheckSessionValid(sessionNum)
-    {
-        isValid := (sessionNum == this.CurSessionNum)
-        ; ToolTip("세션 id : " . sessionNum . "유효성 결과 : " . isValid)
-        ; --- [디버깅] 현재 생성 번호 표시 ---
-
-        ;     ToolTip(
-        ;     "내 루프 세션: " sessionNum "`n"
-        ;     "현재 전역 세션: " this.CurSessionNum "`n"
-        ;     "델리게이트 결과: " (isValid ? "TRUE (진행)" : "FALSE (중단!!)")
-        ; )
-        return isValid
-    }
-
     ; MARK: 오버레이 관리 영역
 
     /**
@@ -626,7 +616,7 @@ class AppManager
      * @param {HotKeyInfo} curHKInfo - 가상키 데이터
      * @returns {void}
      */
-    static CreateOverlay(targetHwnd, curHKInfo, validCheckDel)
+    static CreateOverlay(targetHwnd, curHKInfo)
     {
         if(!targetHwnd || targetHwnd = 0)
             return
@@ -636,15 +626,23 @@ class AppManager
         /** @type {Vector2d} */
         curClientPos := Vector2d(outX, outY)
 
+        ; 최신 세션 가져오기
+        local newSession := JKSession()
+
         ; 새 오버레이 생성
         for , keyData in curHKInfo.hotKeyMap
         {
+            ; 세션 유효 검사
+            if(!newSession.Valid())
+            {
+                JKUtility.Log("오버레이 매니저 단에서 중단 session : " . newSession.insSessionNum . ", 현재 최신 세션 : " . JKSession.curSessionNum)
+                
+                this.ClearOverlay()
+                break
+            }
+
             ; 최적화용 일시 정지
             Sleep(-1)
-
-            ; 최신 세션인지 검증
-            if(!validCheckDel.Call())
-                return
 
             /** @type {OverlayInfo} */
             newOverlay := OverlayInfo()
@@ -672,14 +670,11 @@ class AppManager
             ; 설정에 따라 오버레이 활성화
             newOverlay.SetActive(this.SETTINGS.enableOverlay, option)
 
-            ; 최신 세션인지 검증
-            if(!validCheckDel.Call())
+            if(!newOverlay.isValid)
             {
-                ; ToolTip("🚨 SetActive 직후 엇갈림 발생! 직접 파괴 실행")
-                newOverlay.Destroy()
-
-                return
-            }
+                JKUtility.Log("예전 오버레이 자괴 됨 : " . newOverlay.text . newOverlay.session.insSessionNum)
+            }    
+            
 
             ; 오버레이 맵에 추가
             curHKInfo.overlayMap[newOverlay.aGUI.Hwnd] := newOverlay
@@ -694,16 +689,13 @@ class AppManager
     static ToggleOverlay()
     {
         this.SETTINGS.enableOverlay := !this.SETTINGS.enableOverlay
-        ; ToolTip(this.SETTINGS.enableOverlay " asdadawd")
 
         processHandle := WinActive(this.CurTargetTitle)
 
         if(this.SETTINGS.enableOverlay)
         {
-            local sessionNum := this.CurSessionNum
             this.CreateOverlay(processHandle
-                            , this.curHKInfo
-                            , () => (this.CheckSessionValid.Bind(this, sessionNum)))
+                            , this.curHKInfo)
 
         }
         else

@@ -32,6 +32,7 @@ class JKSession
 
     Valid()
     {
-        return this.insSessionNum == JKSession.curSessionNum
+        isValid := this.insSessionNum == JKSession.curSessionNum
+        return isValid
     }
 }

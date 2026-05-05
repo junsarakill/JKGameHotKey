@@ -5,8 +5,8 @@
 /************************************************************************
  * @description ahk v2 HotKey() 를 객체로 래핑 용도
  * @author JKAKK
- * @date 2026/05/04
- * @version 0.0.3
+ * @date 2026/05/05
+ * @version 0.0.4
  ***********************************************************************/
 
 
@@ -40,7 +40,8 @@ class JKHotKey
                 ; 최신 세션인지 체크해서 아니면 자괴
                 if(!this.session.Valid())
                 {
-                    ToolTip("낡았어: " . this.keyName)
+                    OutputDebug(Format("[JKSession] ⚠ Invalid Detected! keyName : {1} (Object: {2} / Global: {3})`n"
+                    , this.keyName, this.session.insSessionNum, JKSession.curSessionNum))
 
                     return this.Destroy()
                 }
