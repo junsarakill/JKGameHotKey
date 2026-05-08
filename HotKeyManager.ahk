@@ -39,9 +39,6 @@ class HotKeyManager
     static OnTargetChanged(newTargetTitle)
     {
         this.curTargetTitle := newTargetTitle
-
-        ; 변경되었으니 키 매핑 제거
-        ; this.RemoveHotKey()
     }
 
     /**
@@ -156,14 +153,16 @@ class HotKeyManager
      */
     static GetKeyPos(&pos2D, key)
     {
-        if(!this.hotKeyObjPoolMap.Has(key))
+        /** @type {JKHotKey} */
+        hkObj := this.hotKeyObjPoolMap.Get(key, "")
+        if(hkObj == "")
         {
             JKUtility.Log("비존재 키 요청: " . key)
             return false
         }
 
         /** @type {JKHotKey} */
-        pos2D := this.hotKeyObjPoolMap[key].pos
+        pos2D := hkObj.pos
 
         return true
     }
