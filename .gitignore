@@ -6,3 +6,4 @@
 # 설정 파일 제외
 Setting.ini
 Setting.json
+*.log
