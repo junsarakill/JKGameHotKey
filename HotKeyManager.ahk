@@ -1,12 +1,13 @@
 #Requires AutoHotkey v2.0
 #Include Utility.ahk
 #Include JKHotKey.ahk
+#Include JKSession.ahk
 
 /************************************************************************
  * @description 가상키 담당 관리 클래스
  * @author JKAKK
- * @date 2026/04/30
- * @version 0.0.3
+ * @date 2026/05/05
+ * @version 0.0.4
  ***********************************************************************/
 class HotKeyManager
 {
@@ -25,7 +26,6 @@ class HotKeyManager
      * @default null
      */
     static curTargetTitle := ""
-    
 
     ; MARK: 함수 영역
 
@@ -41,7 +41,7 @@ class HotKeyManager
         this.curTargetTitle := newTargetTitle
 
         ; 변경되었으니 키 매핑 제거
-        this.RemoveHotKey()
+        ; this.RemoveHotKey()
     }
 
     /**
@@ -65,14 +65,26 @@ class HotKeyManager
      */
     static CreateAllHotKey(hkInfo)
     {
+        ; 현재 세션
+        local newSession := JKSession()
         for , keyData in hkInfo.hotKeyMap
         {
+            ; 유효 검사
+            if(!newSession.Valid())
+            {
+                ; 현재 생성 중단
+                JKUtility.Log("핫키 매니저 단에서 중단 session : " . newSession.insSessionNum . ", 현재 최신 세션 : " . JKSession.curSessionNum)
+                
+                this.RemoveHotKey()
+                break
+            }
+
+            ; 최적화용 일시 정지
+            Sleep(-1)
+
             ; 핫키 가져오기
             this.GetOrCreateHotKey(keyData, "down")
             this.GetOrCreateHotKey(keyData, "up")
-
-            ; @@ 최적화용 일시 정지
-            Sleep(1)
         }
     }  
 
@@ -101,7 +113,7 @@ class HotKeyManager
                 bindMethodName := "OnKeyUp"
 
             default:
-                ToolTip("잘못된 가상키 입력 타입 요청: " . keyData.ToString())
+                JKUtility.Log("잘못된 가상키 입력 타입 요청: " . keyData.ToString())
                 return false
         }
 
@@ -133,8 +145,6 @@ class HotKeyManager
         {
             oneHKObj.Unbind()
         }                                
-        
-        ; this.curHKInfo.hotKeyMap := Map()
     }
 
     /**
@@ -146,11 +156,9 @@ class HotKeyManager
      */
     static GetKeyPos(&pos2D, key)
     {
-        ; ToolTip(key)
-
         if(!this.hotKeyObjPoolMap.Has(key))
         {
-            ToolTip("비존재 키 요청: " . key)
+            JKUtility.Log("비존재 키 요청: " . key)
             return false
         }
 
@@ -170,7 +178,6 @@ class HotKeyManager
      */
     static OnKeyDown(keyName)
     {
-        ; ToolTip(keyName)
         ; 좌표 가져오기 및 입력 체크| 입력 불가시 return
         if(!this.GetKeyPos(&pos2D, keyName))
             return

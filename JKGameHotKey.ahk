@@ -4,10 +4,20 @@
 #Include Utility.ahk
 #Include SetGameDefaultPosition.ahk
 #Include HotKeyManager.ahk
+#Include JKSession.ahk
+
+/************************************************************************
+ * @description 스크립트 총괄 클래스
+ * @author JKAKK
+ * @date 2026/05/05
+ * @version 0.1.0
+ ***********************************************************************/
 
 ; MARK: 클래스 선언
 
-/** 가상키 데이터, 오버레이 객체를 전부 가지고 있는 청사진 클래스 */
+/** 가상키 데이터, 오버레이 객체를 전부 가지고 있는 청사진 클래스 
+ * @@ 오버레이는 매니저 단으로 분리할 예정
+*/
 class HotKeyInfo
 {
     /**
@@ -38,7 +48,7 @@ class OverlayInfo
     pos := Vector2d()
 
     /** @type {Gui} */
-    aGUI := Gui()
+    aGUI := unset
 
     /** @type {String} */
     text := "?"
@@ -49,6 +59,12 @@ class OverlayInfo
     /** @type {String} */
     prevOption := ""
 
+    ; 세션
+    session := unset
+    
+    ; 존재 유효 유무
+    isValid := true
+
     /**
      * @param {number} x 초기 X 좌표
      * @param {number} y 초기 Y 좌표
@@ -58,6 +74,10 @@ class OverlayInfo
     __New(x := 0, y := 0, text := "?") {
         this.pos := Vector2d(x,y)
         this.text := text
+        this.session := JKSession()
+        this.isValid := true
+        ; @@ 여기서 제대로 인자 받아서 생성 시키는게 좋을듯?
+        /** {@link AppManager.CreateOverlay} */
     }
 
     /**
@@ -71,6 +91,15 @@ class OverlayInfo
     {
         if(value)
         {
+            ; 최신 세션 체크해서 예전꺼면 자괴
+            if(!this.session.Valid())
+            {
+                JKUtility.Log(Format("[JKSession] ⚠ Invalid Detected! text : {1} (Object: {2} / Global: {3})`n"
+                    , this.text, this.session.insSessionNum, JKSession.curSessionNum))
+                
+                return this.Destroy()
+            }
+
             ; 옵션 없으면 이전 옵션 재적용
             if(option = "")
                 option := this.prevOption
@@ -92,12 +121,15 @@ class OverlayInfo
      * @returns {void}
      */
     Destroy() {
-        this.aGUI.Destroy()
+        try this.aGUI.Hide()
+        try this.aGUI.Destroy()
+        this.aGUI := unset
+        this.isValid := false
     }
 
     ; 소멸자
     __Delete() {
-        this.Destroy()
+        try this.Destroy()
     }
 }
 
@@ -278,7 +310,7 @@ class AppManager
             HotKeyManager.OnTargetChanged(value)
 
             ; 현재 오버레이 제거
-            this.ClearOverlay()
+            ; this.ClearOverlay()
 
             ; 시트에 있는 게임인지 체크해서 활성 유무 변경
             this.IsActive := this.FindSheetName(value)
@@ -319,6 +351,10 @@ class AppManager
     static IsActive {
         get => this._isActive
         set {
+            ; 비활성=>비활성 스킵
+            if(this._isActive == false && value == false)
+                return
+
             this._isActive := value
             ; 상태 변경
             this.OnActiveChanged()
@@ -343,6 +379,25 @@ class AppManager
             ; true로 변경될때는 isactive의 활성 유무 다시 체크
             if(value == true)
                 this.IsActive := this.FindSheetName(this.curTargetTitle)
+        }
+    }
+
+    /** @type {Number} */
+    static _curSessionNum := 0
+    /**
+     * #### 현재 가상키 세션
+     * @description 스크립트 시작할때 0 으로 시작해서, {@link AppManager.OnActiveChanged} 실행 될때, ++1 하고,
+     * 가상키랑 오버레이 for 문으로 생성하는 부분에서 {@link HotKeyManager.CreateAllHotKey} 실행될 때 세션 번호랑 일치하는 지 체크해서
+     * 최신 가상키만 유지시키도록 함.
+     * @type {Number} 
+     * @default 0
+     */
+    static CurSessionNum
+    {
+        get => this._curSessionNum
+        set
+        {
+            this._curSessionNum := value
         }
     }
     
@@ -398,22 +453,25 @@ class AppManager
      */
     static ShellHook(wParam, lParam, *) 
     {
-        ; ToolTip("wp:" wParam " lp:" lParam)
-
         ; HSHELL_RUDEAPPACTIVATED || HSHELL_WINDOWACTIVATED
         if (wParam = 0x8004 || wParam = 4) 
         { 
-            ; lParam이 0이면 현재 활성 창의 핸들을 가져옵니다.
-            hwnd := lParam || WinExist("A") 
-
-            if(!hwnd) 
-                return
-
-            curTitle := WinGetTitle(hwnd)
-            ; ToolTip curTitle
-
-            AppManager.CheckFocus(curTitle)
+            SetTimer(ObjBindMethod(this, "AsyncCheckFocus", lParam), -1)
         }
+    }
+
+    ; 비동기 처리
+    static AsyncCheckFocus(lParam)
+    {
+        ; lParam이 0이면 현재 활성 창의 핸들을 가져옵니다.
+        hwnd := lParam || WinExist("A") 
+
+        if(!hwnd) 
+            return
+
+        curTitle := WinGetTitle(hwnd)
+
+        AppManager.CheckFocus(curTitle)
     }
 
     /**
@@ -424,7 +482,6 @@ class AppManager
      */
     static CheckFocus(curTitle) 
     {
-        ; ToolTip("curtitle: " curTitle)
         ; 현재 목표 게임인지 체크
         if(this.CurTargetTitle = curTitle)
             return
@@ -441,13 +498,23 @@ class AppManager
      */
     static OnActiveChanged()
     {
+        ; 가상키 신규 세션
+        JKSession.curSessionNum++
+
+        JKUtility.Log("--------------------------------------------------`n")
+        JKUtility.Log(Format(">>> Global Session Updated to: {1}`n", JKSession.curSessionNum))
+        JKUtility.Log("--------------------------------------------------`n")
+        
+        ; 현재 가상키, 오버레이 제거
+        HotKeyManager.RemoveHotKey()
+        this.ClearOverlay()
+
         if(this.IsScriptActive && this.IsActive)
         {
-            ; ToolTip("시트에 있음 키매핑 생성: " curTitle)
-
             processHandle := WinActive(this.CurTargetTitle)
             ; 키 매핑 시트 데이터 가져오기
             this.curHKInfo.hotKeyMap := this.LoadKeyData(this.CurTargetTitle)
+
             ; 가상키 매니저에 데이터 업데이트
             HotKeyManager.SetupHotKey(this.curHKInfo)
 
@@ -456,8 +523,6 @@ class AppManager
         }
         else if(this.checkStart)
         {
-            ; ToolTip("dow" curTitle)
-            
             ; 전체 프로세스에 시트 게임이 하나도 없는지 체크
             isEnd := true
             for row in this.sheetNameTable
@@ -472,7 +537,10 @@ class AppManager
             ; 없으면 스크립트 종료
             if(isEnd)
             {
-                ToolTip("목표 게임 없음. 핫 키 종료")
+                exitMsg := "목표 게임 없음. 핫 키 종료"
+                JKUtility.Log(exitMsg)
+                ToolTip(exitMsg)
+
                 Sleep(1000) 
                 this.CloseScript()
             }
@@ -558,9 +626,24 @@ class AppManager
         /** @type {Vector2d} */
         curClientPos := Vector2d(outX, outY)
 
+        ; 최신 세션 가져오기
+        local newSession := JKSession()
+
         ; 새 오버레이 생성
         for , keyData in curHKInfo.hotKeyMap
         {
+            ; 세션 유효 검사
+            if(!newSession.Valid())
+            {
+                JKUtility.Log("오버레이 매니저 단에서 중단 session : " . newSession.insSessionNum . ", 현재 최신 세션 : " . JKSession.curSessionNum)
+                
+                this.ClearOverlay()
+                break
+            }
+
+            ; 최적화용 일시 정지
+            Sleep(-1)
+
             /** @type {OverlayInfo} */
             newOverlay := OverlayInfo()
 
@@ -587,12 +670,14 @@ class AppManager
             ; 설정에 따라 오버레이 활성화
             newOverlay.SetActive(this.SETTINGS.enableOverlay, option)
 
+            if(!newOverlay.isValid)
+            {
+                JKUtility.Log("예전 오버레이 자괴 됨 : " . newOverlay.text . newOverlay.session.insSessionNum)
+            }    
             
+
             ; 오버레이 맵에 추가
             curHKInfo.overlayMap[newOverlay.aGUI.Hwnd] := newOverlay
-
-            ; @@ 최적화용 일시 정지
-            Sleep(1)
         }
     }
 
@@ -604,12 +689,15 @@ class AppManager
     static ToggleOverlay()
     {
         this.SETTINGS.enableOverlay := !this.SETTINGS.enableOverlay
-        ; ToolTip(this.SETTINGS.enableOverlay " asdadawd")
 
         processHandle := WinActive(this.CurTargetTitle)
 
         if(this.SETTINGS.enableOverlay)
-            this.CreateOverlay(processHandle, this.curHKInfo)
+        {
+            this.CreateOverlay(processHandle
+                            , this.curHKInfo)
+
+        }
         else
             this.ClearOverlay()
     }
@@ -623,12 +711,13 @@ class AppManager
      */
     static ClearOverlay()
     {
-        for , overlayObj in this.curHKInfo.overlayMap
+        oldMap := this.curHKInfo.overlayMap
+        this.curHKInfo.overlayMap := Map()
+
+        for , overlayObj in oldMap
         {
             overlayObj.Destroy()
         }
-
-        this.curHKInfo.overlayMap := Map()
     }
 
     /**

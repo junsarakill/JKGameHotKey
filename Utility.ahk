@@ -201,6 +201,7 @@ class JKUtility {
         return data
     }
     
+    ; vs code 디버그할때는 vs code를 관리자 권한으로 실행
     ; 관리자 권한 체크 및 재실행
     static RunAdmin()
     {
@@ -230,5 +231,18 @@ class JKUtility {
         }
 
         return newClassIns
+    }
+
+    /**
+     * #### 디버그 로그 용 메시지 출력
+     * *
+     * @param {String} msg - 메시지 문자열
+     * @returns {void} - 반환값 설명
+     * @example JKUtility.Log("asd")
+     */
+    static Log(msg) 
+    {
+        OutputDebug(msg "`n") ; 디버그 뷰어용
+        try FileAppend(msg "`n", "*") ; VS Code 터미널(Stdout) 출력용
     }
 }
