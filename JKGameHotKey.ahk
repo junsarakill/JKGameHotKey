@@ -1,5 +1,5 @@
 ﻿#Requires AutoHotkey v2.0
-#SingleInstance Force
+#SingleInstance Ignore
 #Include Lib\jsongo_AHKv2-main/src/jsongo.v2.ahk
 #Include Utility.ahk
 #Include SetGameDefaultPosition.ahk
@@ -16,7 +16,7 @@
 ; MARK: 클래스 선언
 
 /** 가상키 데이터, 오버레이 객체를 전부 가지고 있는 청사진 클래스 
- * @@ 오버레이는 매니저 단으로 분리할 예정
+ * ;@@ 오버레이는 매니저 단으로 분리할 예정
 */
 class HotKeyInfo
 {
@@ -28,109 +28,6 @@ class HotKeyInfo
      * @example for key, keyData in this.hotKeyMap
      */
     hotKeyMap := Map()
-
-    /**
-     * #### 가상키 오버레이 맵
-     * @type {Map} 
-     * @default null
-     * @see OverlayInfo
-     * @example for guiHwnd , overlayInfo in this.overlayMap
-     */
-    overlayMap := Map()
-}
-
-/**
- * 오버레이 정보를 관리하는 클래스
- */
-class OverlayInfo
-{
-    /** @type {Vector2d} */
-    pos := Vector2d()
-
-    /** @type {Gui} */
-    aGUI := unset
-
-    /** @type {String} */
-    text := "?"
-
-    /** @type {Bool} */
-    isVisible := false
-
-    /** @type {String} */
-    prevOption := ""
-
-    ; 세션
-    session := unset
-    
-    ; 존재 유효 유무
-    isValid := true
-
-    /**
-     * @param {number} x 초기 X 좌표
-     * @param {number} y 초기 Y 좌표
-     * @param {string} text 표시할 텍스트
-     * @returns {OverlayInfo}
-     */
-    __New(x := 0, y := 0, text := "?") {
-        this.pos := Vector2d(x,y)
-        this.text := text
-        this.session := JKSession()
-        this.isValid := true
-        ; @@ 여기서 제대로 인자 받아서 생성 시키는게 좋을듯?
-        /** {@link AppManager.CreateOverlay} */
-    }
-
-    /**
-     * #### 오버레이 활성화 여부 설정
-     * *
-     * @param {Bool} value - 활성화 여부
-     * @param {String} option - gui 옵션
-     * @returns {void}
-     */
-    SetActive(value := true, option := "")
-    {
-        if(value)
-        {
-            ; 최신 세션 체크해서 예전꺼면 자괴
-            if(!this.session.Valid())
-            {
-                JKUtility.Log(Format("[JKSession] ⚠ Invalid Detected! text : {1} (Object: {2} / Global: {3})`n"
-                    , this.text, this.session.insSessionNum, JKSession.curSessionNum))
-                
-                return this.Destroy()
-            }
-
-            ; 옵션 없으면 이전 옵션 재적용
-            if(option = "")
-                option := this.prevOption
-
-            if(this.prevOption != option)
-                this.prevOption := option
-            
-            this.aGUI.Show(option)
-        }
-        else
-            this.aGUI.Hide()
-
-        this.isVisible := value
-    }
-
-    /**
-     * #### 오버레이 제거
-     * *
-     * @returns {void}
-     */
-    Destroy() {
-        try this.aGUI.Hide()
-        try this.aGUI.Destroy()
-        this.aGUI := unset
-        this.isValid := false
-    }
-
-    ; 소멸자
-    __Delete() {
-        try this.Destroy()
-    }
 }
 
 /** 설정 클래스
@@ -140,6 +37,16 @@ class SettingData
 {
     /** @type {Bool} */
     enableOverlay := true
+
+    /** 
+     * #### 가상키 오버레이 투명도
+     * @type {number} 
+     * @range `0` ~ `255`
+     * @default `100`  
+     */
+    overlayOpacity := 100
+    ; 오버레이 BG 색상 추가
+    overlayBGColor := "dfdfdf"
 
     /** @type {String} */
     version := "1.0.0"
@@ -268,6 +175,7 @@ class AppManager
     /**
      * #### 설정 데이터
      * @type {SettingData} 
+     * @see SettingData
      * @readonly
     */
     static SETTINGS => this._settings
@@ -332,14 +240,6 @@ class AppManager
      * @default false
      */
     static checkStart := false
-
-    /** 
-     * #### 가상키 오버레이 투명도
-     * @type {number} 
-     * @range `0` ~ `255`
-     * @default `100`  
-     */
-    static overlayOpacity := 100
 
     /** @private */
     static _isActive := false
@@ -629,24 +529,6 @@ class AppManager
         }
         else
             this.ClearOverlay()
-    }
-
-    ; 오버레이 초기화
-    /**
-     * #### 오버레이 초기화
-     * *
-     * @see OverlayInfo
-     * @returns {void}
-     */
-    static ClearOverlay()
-    {
-        oldMap := this.curHKInfo.overlayMap
-        this.curHKInfo.overlayMap := Map()
-
-        for , overlayObj in oldMap
-        {
-            overlayObj.Destroy()
-        }
     }
 
     /**
