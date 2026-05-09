@@ -11,26 +11,95 @@
 
 
 /**
- * 오버레이 정보를 관리하는 클래스
+ * MARK: 오버레이 객체
  */
 class JKOverlay
 {
-    /** @type {Vector2d} */
+    /**
+     * #### 오버레이 위치
+     * @description 클라위치 + 클라 내 위치 보정된 결과 값
+     * @type {Vector2d} 
+     */
     pos := Vector2d()
 
     /** @type {Gui} */
     aGUI := unset
 
-    /** @type {String} */
+    /**
+     * #### 오버레이 이름
+     * @description 시트에 적혀있는 name 부분
+     * @type {String} 
+     * @default ?
+     */
     name := "?"
 
-    /** @type {Bool} */
-    isVisible := false
+    /** @type {bool} */
+    _isVisible := false
+    /**
+     * #### 오버레이 활성 유무
+     * @see OverlayManager.CreateOverlay
+     * @see OverlayManager.ClearOverlay
+     * @type {bool} 
+     * @default false
+     */
+    IsVisible
+    {
+        get => this._isVisible
+        set
+        {
+            this._isVisible := value
+
+            ; 유효성 검사
+            if(!this.isValid)
+            {
+                JKUtility.Log("제거상태 오버레이 접근" . this.name)
+                return
+            }
+
+            if(value)
+            {
+                ; 최신 세션 체크해서 예전꺼면 자괴
+                if(!this.session.Valid())
+                {
+                    JKUtility.Log(Format("[JKSession] ⚠ Invalid Detected! text : {1} (Object: {2} / Global: {3})`n"
+                        , this.name, this.session.insSessionNum, JKSession.curSessionNum))
+                    
+                    return this.Destroy()
+                }
+
+                ; 옵션이 없으면 이전 값 유지, 있으면 새 값 할당 및 백업 갱신
+                this.guiShowOption := (this.guiShowOption == "") ? this.prevGuiShowOption 
+                    : (this.prevGuiShowOption := this.guiShowOption)
+                
+                ; gui 활성화
+                this.aGUI.Show(this.guiShowOption)
+            }
+            else
+                this.aGUI.Hide()
+            }
+    }
+
+    /**
+     * #### gui show 옵션
+     * @type {String} 
+     * @default null
+     */
+    guiShowOption := ""
 
     /** @type {String} */
+    /**
+     * #### 백업용 gui show 옵션
+     * @type {String} 
+     * @default null
+     */
     prevGuiShowOption := ""
 
-    ; 세션
+    /**
+     * #### 세션
+     * @type {JKSession} 
+     * @see JKSession
+     * @default null
+     */
     session := unset
     
     ; 존재 유효 유무
@@ -70,39 +139,9 @@ class JKOverlay
      * @param {Bool} value - 활성화 여부
      * @returns {void}
      */
-    SetActive(value := true)
+    SetVisible(value := true)
     {
-        ; 유효성 검사
-        if(!this.isValid)
-        {
-            JKUtility.Log("제거상태 오버레이 접근" . this.name)
-            return
-        }
-
-        if(value)
-        {
-            ; 최신 세션 체크해서 예전꺼면 자괴
-            if(!this.session.Valid())
-            {
-                JKUtility.Log(Format("[JKSession] ⚠ Invalid Detected! text : {1} (Object: {2} / Global: {3})`n"
-                    , this.name, this.session.insSessionNum, JKSession.curSessionNum))
-                
-                return this.Destroy()
-            }
-
-            ; 옵션 없으면 이전 옵션 재적용
-            if(this.guiShowOption = "")
-                this.guiShowOption := this.prevGuiShowOption
-
-            if(this.prevGuiShowOption != this.guiShowOption)
-                this.prevGuiShowOption := this.guiShowOption
-            
-            this.aGUI.Show(this.guiShowOption)
-        }
-        else
-            this.aGUI.Hide()
-
-        this.isVisible := value
+        this.IsVisible := value
     }
 
     /**
@@ -111,7 +150,7 @@ class JKOverlay
      * @returns {void}
      */
     Destroy() {
-        try this.aGUI.Hide()
+        this.IsVisible := false
         try this.aGUI.Destroy()
         this.aGUI := unset
         this.isValid := false
@@ -124,14 +163,14 @@ class JKOverlay
 }
 
 ; MARK: 매니저 클래스
-class overlayManager
+class OverlayManager
 {
     /**
      * #### 전체 오버레이 오브젝트 풀
      * @type {Map} 
      * @default null
      * @example overlayObjPoolMap[guiHwnd] := oneOverlay
-     * @description guiHwnd == Gui.Hwnd, oneOverlay == Overlay()
+     * @description guiHwnd == Gui.Hwnd, oneOverlay == JKOverlay()
      */
     static overlayObjPoolMap := Map()
 
@@ -194,11 +233,13 @@ class overlayManager
             newOverlay := JKOverlay(newOverlayPos, newOpacity, newOverlayWidth, newGuiOption, newGuiBGColor, newGuiText)
             
             ; 설정에 따라 오버레이 활성화
-            newOverlay.SetActive(isActive)
+            newOverlay.SetVisible(isActive)
 
             if(!newOverlay.isValid)
             {
                 JKUtility.Log("예전 오버레이 자괴 됨 : " . newOverlay.name . newOverlay.session.insSessionNum)
+                
+                continue
             }    
 
             ; 오버레이 맵에 추가

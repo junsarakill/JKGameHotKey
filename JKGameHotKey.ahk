@@ -525,7 +525,6 @@ class AppManager
         {
             this.CreateOverlay(processHandle
                             , this.curHKInfo)
-
         }
         else
             this.ClearOverlay()
