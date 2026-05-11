@@ -2,6 +2,7 @@
 #Include Utility.ahk
 #Include JKHotKey.ahk
 #Include JKSession.ahk
+#Include JKSettings.ahk
 
 /************************************************************************
  * @description 가상키 담당 관리 클래스

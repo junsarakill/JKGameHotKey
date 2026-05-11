@@ -5,8 +5,8 @@
 /************************************************************************
  * @description 오버레이 관련 스크립트
  * @author JKAKK
- * @date 2026/05/09
- * @version 0.0.2
+ * @date 2026/05/11
+ * @version 0.0.3
  ***********************************************************************/
 
 
@@ -174,19 +174,32 @@ class OverlayManager
      */
     static overlayObjPoolMap := Map()
 
-    static overlayOpacity := 100
-    static overlayBGColor := "dfdfdf"
+    ; 현재 활성화된 오버레이 맵
+    static overlayActiveMap := Map()
+
+    ; 오버레이 상태 변경
+    static OnOverlayStateChanged(isActive, overlayContext)
+    {
+        if(isActive)
+        {
+            this.CreateOverlay(overlayContext.hwnd
+                            , overlayContext.hkInfo
+                            , overlayContext.settings, true)
+        }
+        else
+            this.ClearOverlay()
+    }
 
     /**
      * #### 가상키 오버레이 생성
-     * ;FIXME 설정 데이터 받아서 적용하기
      * *
      * @param {Number} processHandle - 적용할 프로세스 값
      * @param {HotKeyInfo} curHKInfo - 가상키 데이터
+     * @param {JKSettings} settings - 설정 데이터
      * @param {bool} isActive - 생성 후 즉시 활성 유무
      * @returns {void}
      */
-    static CreateOverlay(targetHwnd, curHKInfo, isActive := false)
+    static CreateOverlay(targetHwnd, curHKInfo, settings, isActive := true)
     {
         if(!targetHwnd || targetHwnd = 0)
             return
@@ -221,10 +234,10 @@ class OverlayManager
 
             newOverlayPos := Vector2d(cx, cy)
             newOverlayWidth := 4 + StrLen(keyData.name) * 8
-            newOpacity := this.overlayOpacity
+            newOpacity := settings.overlayOpacity
 
             newGuiOption := "-Caption AlwaysOnTop +ToolWindow -Border"
-            newGuiBGColor := this.overlayBGColor
+            newGuiBGColor := settings.overlayBGColor
             ; 사용시 * 뒤에 붙이기
             newGuiText := ["Text", "x3 y2 " , keyData.name]
             ; ========
@@ -242,24 +255,22 @@ class OverlayManager
                 continue
             }    
 
-            ; 오버레이 맵에 추가
-            ; @@ 오브젝트 풀, 그리고 현재 활성화된 풀 에도 추가
-            curHKInfo.overlayMap[newOverlay.aGUI.Hwnd] := newOverlay
+            ; 오브젝트 풀, 활성 오버레이 맵에 추가
+            this.overlayObjPoolMap[newOverlay.aGUI.Hwnd] := newOverlay
+            this.overlayActiveMap[newOverlay.aGUI.Hwnd] := newOverlay
         }
     }
 
     /**
      * #### 오버레이 초기화
-     * ;FIXME appmanager 에서 curhkinfo의 overlaymap 제거함.
-     * 따라서 자체 풀이랑 활성화 풀에서 비활성화 하게 변경필요.
      * *
      * @see OverlayInfo
      * @returns {void}
      */
     static ClearOverlay()
     {
-        oldMap := this.curHKInfo.overlayMap
-        this.curHKInfo.overlayMap := Map()
+        oldMap := this.overlayActiveMap
+        this.overlayActiveMap := Map()
 
         for , overlayObj in oldMap
         {
