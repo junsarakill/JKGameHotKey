@@ -1,6 +1,5 @@
 ﻿#Requires AutoHotkey v2.0
 #SingleInstance Ignore
-#Include Lib\jsongo_AHKv2-main/src/jsongo.v2.ahk
 #Include Utility.ahk
 #Include SetGameDefaultPosition.ahk
 #Include HotKeyManager.ahk

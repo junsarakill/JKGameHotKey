@@ -133,6 +133,12 @@ class JKOverlay
         this.guiShowOption := "NoActivate w" . this.width . " h15 x" . this.pos.x . " y" . this.pos.y
     }
 
+    ; 업데이트
+    Update()
+    {
+        
+    }
+
     /**
      * #### 오버레이 활성화 여부 설정
      * *
