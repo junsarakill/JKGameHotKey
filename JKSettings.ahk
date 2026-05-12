@@ -1,4 +1,4 @@
-; #Include Lib\jsongo_AHKv2-main/src/jsongo.v2.ahk
+#Include Lib\jsongo_AHKv2-main/src/jsongo.v2.ahk
 /************************************************************************
  * @description 설정 데이터
  * @author JKAKK
