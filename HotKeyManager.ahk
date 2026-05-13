@@ -124,7 +124,7 @@ class HotKeyManager
         ; 없으면 새로 생성
         else
         {
-            newHotKey := JKHotKey(newHKName, ObjBindMethod(this, bindMethodName), "On", keyData.pos, , keyData.description)
+            newHotKey := JKHotKey(newHKName, ObjBindMethod(this, bindMethodName), keyData, "On", )
             ; 풀에 추가
             this.hotKeyObjPoolMap[newHKName] := newHotKey
         }

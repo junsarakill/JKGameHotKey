@@ -22,12 +22,15 @@ class JKOverlay
      */
     pos := Vector2d()
 
+    ; 오버레이 폭
+    width := 0
+
     /** @type {Gui} */
     aGUI := unset
 
     /**
      * #### 오버레이 이름
-     * @description 시트에 적혀있는 name 부분
+     * @description 시트에 적혀있는 name 부분 == keyName
      * @type {String} 
      * @default ?
      */
@@ -66,13 +69,9 @@ class JKOverlay
                     
                     return this.Destroy()
                 }
-
-                ; 옵션이 없으면 이전 값 유지, 있으면 새 값 할당 및 백업 갱신
-                this.guiShowOption := (this.guiShowOption == "") ? this.prevGuiShowOption 
-                    : (this.prevGuiShowOption := this.guiShowOption)
                 
                 ; gui 활성화
-                this.aGUI.Show(this.guiShowOption)
+                this.aGUI.Show(this.GuiShowOption)
             }
             else
                 this.aGUI.Hide()
@@ -84,7 +83,7 @@ class JKOverlay
      * @type {String} 
      * @default null
      */
-    guiShowOption := ""
+    GuiShowOption => "NoActivate w" . this.width . " h15 x" . this.pos.x . " y" . this.pos.y
 
     /** @type {String} */
     /**
@@ -100,43 +99,59 @@ class JKOverlay
      * @see JKSession
      * @default null
      */
-    session := unset
-    
+    session := 0
+
     ; 존재 유효 유무
     isValid := true
 
     /**
-     * @param {number} x 초기 X 좌표
-     * @param {number} y 초기 Y 좌표
-     * @param {string} name 표시할 텍스트
+     * @param {Vector2d} pos - 클라+위치 보정된 위치 좌표
+     * @param {Number} opacity - 투명도 0~255
+     * @param {Number} width - 오버레이 가로 길이
+     * @param {String} guiOption - gui 옵션
+     * @param {String} guiBGColor - 배경색
+     * @param {Array} guiText - ["Text", 위치, keyName]
      * @returns {OverlayInfo}
      */
     __New(pos := Vector2d(), opacity := 255, width := 12
         , guiOption := "", guiBGColor := "FFFFFF", guiText := ["","",""]) 
     {
-        this.session := JKSession()
+        this.aGUI := Gui(guiOption)
+        
+        ; 포커스 되지 않게 설정
+        DllCall("SetWindowLong", "Ptr", this.aGUI.Hwnd, "Int", -20, "Int", 0x80000 | 0x20 | 0x8)
+
+        ; 나머지 변수는 업데이트
+        this.Update(pos, opacity, width, guiBGColor, guiText)
+    }
+
+    ; 업데이트
+    Update(pos := Vector2d(), opacity := 255, width := 12, guiBGColor := "FFFFFF", guiText := ["","",""])
+    {
+        JKSession.UpdateOrCreateSession(this)
+
         this.isValid := true
         this.name := guiText[2]
 
         ; gui 생성
-        this.aGUI := Gui(guiOption)
         this.aGUI.BackColor := guiBGColor
-        this.aGUI.Add(guiText*)
+        ; 컨트롤 존재 여부 확인 후 처리
+        if (!this.HasProp("txtCtrl")) 
+        {
+            ; 처음 실행될 때: 컨트롤 생성 및 저장
+            this.txtCtrl := this.aGUI.Add(guiText*) 
+        } 
+        else 
+        {
+            ; 이미 생성된 이후: 값만 업데이트
+            this.txtCtrl.Value := guiText[2]
+        }
+        
         ; 투명도
         WinSetTransparent(opacity, this.aGUI.Hwnd)
-        ; 포커스 되지 않게 설정
-        DllCall("SetWindowLong", "Ptr", this.aGUI.Hwnd, "Int", -20, "Int", 0x80000 | 0x20 | 0x8)
 
         this.pos := pos
         this.width := width
-
-        this.guiShowOption := "NoActivate w" . this.width . " h15 x" . this.pos.x . " y" . this.pos.y
-    }
-
-    ; 업데이트
-    Update()
-    {
-        
     }
 
     /**
@@ -149,6 +164,8 @@ class JKOverlay
     {
         this.IsVisible := value
     }
+
+    ; @@오버레이 비활성화
 
     /**
      * #### 오버레이 제거
@@ -175,8 +192,8 @@ class OverlayManager
      * #### 전체 오버레이 오브젝트 풀
      * @type {Map} 
      * @default null
-     * @example overlayObjPoolMap[guiHwnd] := oneOverlay
-     * @description guiHwnd == Gui.Hwnd, oneOverlay == JKOverlay()
+     * @example overlayObjPoolMap[name] := oneOverlay
+     * @description name == keyName, oneOverlay == JKOverlay()
      */
     static overlayObjPoolMap := Map()
 
@@ -188,7 +205,7 @@ class OverlayManager
     {
         if(isActive)
         {
-            this.CreateOverlay(overlayContext.hwnd
+            this.GetOrCreateOverlay(overlayContext.hwnd
                             , overlayContext.hkInfo
                             , overlayContext.settings, true)
         }
@@ -205,7 +222,7 @@ class OverlayManager
      * @param {bool} isActive - 생성 후 즉시 활성 유무
      * @returns {void}
      */
-    static CreateOverlay(targetHwnd, curHKInfo, settings, isActive := true)
+    static GetOrCreateOverlay(targetHwnd, curHKInfo, settings, isActive := true)
     {
         if(!targetHwnd || targetHwnd = 0)
             return
@@ -219,7 +236,7 @@ class OverlayManager
         local newSession := JKSession()
 
         ; 새 오버레이 생성
-        for , keyData in curHKInfo.hotKeyMap
+        for keyName, keyData in curHKInfo.hotKeyMap
         {
             ; 세션 유효 검사
             if(!newSession.Valid())
@@ -233,7 +250,7 @@ class OverlayManager
             ; 최적화용 일시 정지
             Sleep(-1)
 
-            ; 오버레이 객체 용 인자 설정
+            ; ===오버레이 객체 용 인자 설정
             ; 클라 위치에 맞추어 보정
             cx := curClientPos.x + keyData.pos.x
             cy := curClientPos.y + keyData.pos.y
@@ -247,23 +264,33 @@ class OverlayManager
             ; 사용시 * 뒤에 붙이기
             newGuiText := ["Text", "x3 y2 " , keyData.name]
             ; ========
-            
+
+            ; 기존 풀에 존재 확인
             /** @type {JKOverlay} */
-            newOverlay := JKOverlay(newOverlayPos, newOpacity, newOverlayWidth, newGuiOption, newGuiBGColor, newGuiText)
-            
+            newOverlay := this.overlayObjPoolMap.Get(keyName, false)
+            ; 있으면 업데이트 하고 재사용
+            if(newOverlay)
+            {
+                newOverlay.Update()
+            }
+            else
+            {
+                newOverlay := JKOverlay(newOverlayPos, newOpacity, newOverlayWidth, newGuiOption, newGuiBGColor, newGuiText)
+            }
+
             ; 설정에 따라 오버레이 활성화
             newOverlay.SetVisible(isActive)
 
             if(!newOverlay.isValid)
             {
-                JKUtility.Log("예전 오버레이 자괴 됨 : " . newOverlay.name . newOverlay.session.insSessionNum)
+                JKUtility.Log("생성 중단된 오버레이 자괴 됨 : " . newOverlay.name . newOverlay.session.insSessionNum)
                 
                 continue
             }    
 
             ; 오브젝트 풀, 활성 오버레이 맵에 추가
-            this.overlayObjPoolMap[newOverlay.aGUI.Hwnd] := newOverlay
-            this.overlayActiveMap[newOverlay.aGUI.Hwnd] := newOverlay
+            this.overlayObjPoolMap[newOverlay.name] := newOverlay
+            this.overlayActiveMap[newOverlay.name] := newOverlay
         }
     }
 

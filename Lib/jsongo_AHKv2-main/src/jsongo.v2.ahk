@@ -124,7 +124,7 @@ class jsongo {
      * @access private
      */
     static _Parse(jtxt, reviver:='') {
-        static xval := 1, xobj := 2, xarr := 3, xkey := 4, xstr := 5, xend := 6, xcln := 7, xeof := 8
+        static xval := 1, xobj := 2, xarr := 3, xkey := 4, _xstr := 5, xend := 6, xcln := 7, xeof := 8
         , xerr := 9, null := '', str_flag := Chr(5), tmp_q := Chr(6), tmp_bs:= Chr(7), fn := A_ThisFunc
         
         expect   := xval
@@ -159,7 +159,7 @@ class jsongo {
                 ,['\r'    ,'`r']
                 ,['\t'    ,'`t'] ]
         
-        for k, esc in esc_arr
+        for , esc in esc_arr
             this.replace_if_exist(&jtxt, esc[1], esc[2])
         
         ; Unicode
@@ -264,7 +264,7 @@ class jsongo {
         return (path.Length != 1) ? err(37, ji, 'Size: 1', 'Actual size: ' path.Length) : json[1]
         
         ; Remove the current path
-        path_pop(&char) => (path.Length > 1) ? path.Pop() : err(38, ji, 'Size > 0', 'Actual size: ' path.Length-1)
+        path_pop(&_char) => (path.Length > 1) ? path.Pop() : err(38, ji, 'Size > 0', 'Actual size: ' path.Length-1)
         ; Reviver
         rev(value) => (path[path.Length] is Array) ? (if_rev ? value := reviver((path[path.Length].Length), value, remove) : 0, (value == remove) ? '' : path[path.Length].Push(value) ) : (if_rev ? value := reviver(key, value, remove) : 0, (value == remove) ? '' : path[path.Length][key] := value )
         ; Error handling
@@ -300,7 +300,7 @@ class jsongo {
             case 'Func': if_rep := (replacer.MaxParams > 2) ? 1 : 0
             case 'Array':
                 if_rep := 2, omit := Map(), omit.Default := 0
-                for i, v in replacer
+                for , v in replacer
                     omit[v] := 1
             default: if_rep := 0
         }
@@ -356,7 +356,7 @@ class jsongo {
                 case 'Array':
                     str := '['
                     if (ila := this.inline_arrays ?  1 : 0)
-                        for i, v in item
+                        for , v in item
                             InStr('String|Float|Integer', Type(v), 1) ? 1 : ila := ''
                         until (!ila)
                     for i, v in item

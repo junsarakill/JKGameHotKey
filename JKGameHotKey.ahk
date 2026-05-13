@@ -338,7 +338,7 @@ class AppManager
             if(this.IsOverlayActive)
             {
                 ; 오버레이 생성
-                OverlayManager.CreateOverlay(processHandle, this.curHKInfo, this.SETTINGS, true)
+                OverlayManager.GetOrCreateOverlay(processHandle, this.curHKInfo, this.SETTINGS, true)
             }
         }
         else if(this.checkStart)
