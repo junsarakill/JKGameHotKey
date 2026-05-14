@@ -78,20 +78,15 @@ class JKOverlay
             }
     }
 
+    ; 존재 유효 유무
+    isValid := true
+
     /**
      * #### gui show 옵션
      * @type {String} 
      * @default null
      */
     GuiShowOption => "NoActivate w" . this.width . " h15 x" . this.pos.x . " y" . this.pos.y
-
-    /** @type {String} */
-    /**
-     * #### 백업용 gui show 옵션
-     * @type {String} 
-     * @default null
-     */
-    prevGuiShowOption := ""
 
     /**
      * #### 세션
@@ -100,9 +95,6 @@ class JKOverlay
      * @default null
      */
     session := 0
-
-    ; 존재 유효 유무
-    isValid := true
 
     /**
      * @param {Vector2d} pos - 클라+위치 보정된 위치 좌표
@@ -113,7 +105,7 @@ class JKOverlay
      * @param {Array} guiText - ["Text", 위치, keyName]
      * @returns {OverlayInfo}
      */
-    __New(pos := Vector2d(), opacity := 255, width := 12
+    __New(pos, opacity := 255, width := 12
         , guiOption := "", guiBGColor := "FFFFFF", guiText := ["","",""]) 
     {
         this.aGUI := Gui(guiOption)
@@ -126,14 +118,14 @@ class JKOverlay
     }
 
     ; 업데이트
-    Update(pos := Vector2d(), opacity := 255, width := 12, guiBGColor := "FFFFFF", guiText := ["","",""])
+    Update(pos, opacity := 255, width := 12, guiBGColor := "FFFFFF", guiText := ["","",""])
     {
         JKSession.UpdateOrCreateSession(this)
 
         this.isValid := true
-        this.name := guiText[2]
+        this.name := guiText[3]
+        
 
-        ; gui 생성
         this.aGUI.BackColor := guiBGColor
         ; 컨트롤 존재 여부 확인 후 처리
         if (!this.HasProp("txtCtrl")) 
@@ -144,7 +136,7 @@ class JKOverlay
         else 
         {
             ; 이미 생성된 이후: 값만 업데이트
-            this.txtCtrl.Value := guiText[2]
+            this.txtCtrl.Value := this.name
         }
         
         ; 투명도
@@ -152,6 +144,8 @@ class JKOverlay
 
         this.pos := pos
         this.width := width
+
+        JKUtility.Log("gui hwnd: " . this.aGUI.Hwnd . " keyname : " . this.name . " ctrlV : " . this.txtCtrl.Value)
     }
 
     /**
@@ -165,7 +159,13 @@ class JKOverlay
         this.IsVisible := value
     }
 
-    ; @@오버레이 비활성화
+    ; 오버레이 비활성화
+    Disactive()
+    {
+        this.IsVisible := false  
+        try this.txtCtrl.Value := ""
+        this.isValid := false
+    }
 
     /**
      * #### 오버레이 제거
@@ -173,10 +173,9 @@ class JKOverlay
      * @returns {void}
      */
     Destroy() {
-        this.IsVisible := false
+        this.Disactive()
         try this.aGUI.Destroy()
         this.aGUI := unset
-        this.isValid := false
     }
 
     ; 소멸자
@@ -271,7 +270,7 @@ class OverlayManager
             ; 있으면 업데이트 하고 재사용
             if(newOverlay)
             {
-                newOverlay.Update()
+                newOverlay.Update(newOverlayPos, newOpacity, newOverlayWidth, newGuiBGColor, newGuiText)
             }
             else
             {
@@ -292,10 +291,12 @@ class OverlayManager
             this.overlayObjPoolMap[newOverlay.name] := newOverlay
             this.overlayActiveMap[newOverlay.name] := newOverlay
         }
+
+        JKUtility.Log("생성 종료")
     }
 
     /**
-     * #### 오버레이 초기화
+     * #### 오버레이 비활성화
      * *
      * @see OverlayInfo
      * @returns {void}
@@ -307,7 +308,7 @@ class OverlayManager
 
         for , overlayObj in oldMap
         {
-            overlayObj.Destroy()
+            overlayObj.Disactive()
         }
     }
 }
