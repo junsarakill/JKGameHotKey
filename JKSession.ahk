@@ -35,4 +35,13 @@ class JKSession
         isValid := this.insSessionNum == JKSession.curSessionNum
         return isValid
     }
+
+    ; 있으면 업데이트, 없으면 새 세션 발급
+    static UpdateOrCreateSession(targetObj, propName := "session")
+    {
+        if(targetObj.%propName%)
+            targetObj.%propName%.Update()
+        else
+            targetObj.%propName% := JKSession()
+    }
 }

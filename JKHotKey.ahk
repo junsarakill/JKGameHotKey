@@ -19,7 +19,7 @@ class JKHotKey
      * @type {JKSession} 
      * @default null
      */
-    session := unset
+    session := 0
 
     /** @type {bool} */
     _isActive := false
@@ -111,15 +111,13 @@ class JKHotKey
 
     ; MARK: 함수 영역
     ; 생성자
-    __New(keyName, callback, option := "", pos := Vector2d(), tag := "", desc := "없음")
+    __New(keyName, callback, keyData, option := "", tag := "")
     {
-        this.session := JKSession()
-
         this.keyName := keyName
         this.option := option
-        this.pos := pos
         this.tag := tag
-        this.desc := desc
+
+        this.Update(keyData)
 
         this.IsActive := false
         this.Callback := Callback
@@ -127,6 +125,19 @@ class JKHotKey
         ; 옵션이 바로 시작이면 활성화
         if(option == "On")
             this.Bind()
+    }
+
+    /**
+     * #### 키 데이터 받아서 가상키 업데이트
+     * @see KeyData
+     * @param {KeyData} keyData - 새 가상키 데이터
+     * @returns {void}
+     */
+    Update(keyData)
+    {
+        this.pos := keyData.pos
+        this.desc := keyData.description
+        JKSession.UpdateOrCreateSession(this)
     }
 
     ; 함수 바인드 및 핫키 등록
@@ -147,18 +158,7 @@ class JKHotKey
         this.IsActive := !this.IsActive
     }
 
-    /**
-     * #### 키 데이터 받아서 가상키 업데이트
-     * @see KeyData
-     * @param {KeyData} keyData - 새 가상키 데이터
-     * @returns {void}
-     */
-    Update(keyData)
-    {
-        this.pos := keyData.pos
-        this.desc := keyData.description
-        this.session.Update()
-    }
+    
 
     ; 자괴
     Destroy()

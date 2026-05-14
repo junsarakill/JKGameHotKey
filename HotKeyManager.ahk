@@ -2,6 +2,7 @@
 #Include Utility.ahk
 #Include JKHotKey.ahk
 #Include JKSession.ahk
+#Include JKSettings.ahk
 
 /************************************************************************
  * @description 가상키 담당 관리 클래스
@@ -39,9 +40,6 @@ class HotKeyManager
     static OnTargetChanged(newTargetTitle)
     {
         this.curTargetTitle := newTargetTitle
-
-        ; 변경되었으니 키 매핑 제거
-        ; this.RemoveHotKey()
     }
 
     /**
@@ -126,7 +124,7 @@ class HotKeyManager
         ; 없으면 새로 생성
         else
         {
-            newHotKey := JKHotKey(newHKName, ObjBindMethod(this, bindMethodName), "On", keyData.pos, , keyData.description)
+            newHotKey := JKHotKey(newHKName, ObjBindMethod(this, bindMethodName), keyData, "On", )
             ; 풀에 추가
             this.hotKeyObjPoolMap[newHKName] := newHotKey
         }
@@ -156,14 +154,16 @@ class HotKeyManager
      */
     static GetKeyPos(&pos2D, key)
     {
-        if(!this.hotKeyObjPoolMap.Has(key))
+        /** @type {JKHotKey} */
+        hkObj := this.hotKeyObjPoolMap.Get(key, "")
+        if(hkObj == "")
         {
             JKUtility.Log("비존재 키 요청: " . key)
             return false
         }
 
         /** @type {JKHotKey} */
-        pos2D := this.hotKeyObjPoolMap[key].pos
+        pos2D := hkObj.pos
 
         return true
     }

@@ -1,10 +1,11 @@
 ﻿#Requires AutoHotkey v2.0
 #SingleInstance Ignore
-#Include Lib\jsongo_AHKv2-main/src/jsongo.v2.ahk
 #Include Utility.ahk
 #Include SetGameDefaultPosition.ahk
 #Include HotKeyManager.ahk
 #Include JKSession.ahk
+#Include JKSettings.ahk
+#Include Overlay.ahk
 
 /************************************************************************
  * @description 스크립트 총괄 클래스
@@ -16,7 +17,6 @@
 ; MARK: 클래스 선언
 
 /** 가상키 데이터, 오버레이 객체를 전부 가지고 있는 청사진 클래스 
- * @@ 오버레이는 매니저 단으로 분리할 예정
 */
 class HotKeyInfo
 {
@@ -28,211 +28,9 @@ class HotKeyInfo
      * @example for key, keyData in this.hotKeyMap
      */
     hotKeyMap := Map()
-
-    /**
-     * #### 가상키 오버레이 맵
-     * @type {Map} 
-     * @default null
-     * @see OverlayInfo
-     * @example for guiHwnd , overlayInfo in this.overlayMap
-     */
-    overlayMap := Map()
 }
 
-/**
- * 오버레이 정보를 관리하는 클래스
- */
-class OverlayInfo
-{
-    /** @type {Vector2d} */
-    pos := Vector2d()
 
-    /** @type {Gui} */
-    aGUI := unset
-
-    /** @type {String} */
-    text := "?"
-
-    /** @type {Bool} */
-    isVisible := false
-
-    /** @type {String} */
-    prevOption := ""
-
-    ; 세션
-    session := unset
-    
-    ; 존재 유효 유무
-    isValid := true
-
-    /**
-     * @param {number} x 초기 X 좌표
-     * @param {number} y 초기 Y 좌표
-     * @param {string} text 표시할 텍스트
-     * @returns {OverlayInfo}
-     */
-    __New(x := 0, y := 0, text := "?") {
-        this.pos := Vector2d(x,y)
-        this.text := text
-        this.session := JKSession()
-        this.isValid := true
-        ; @@ 여기서 제대로 인자 받아서 생성 시키는게 좋을듯?
-        /** {@link AppManager.CreateOverlay} */
-    }
-
-    /**
-     * #### 오버레이 활성화 여부 설정
-     * *
-     * @param {Bool} value - 활성화 여부
-     * @param {String} option - gui 옵션
-     * @returns {void}
-     */
-    SetActive(value := true, option := "")
-    {
-        if(value)
-        {
-            ; 최신 세션 체크해서 예전꺼면 자괴
-            if(!this.session.Valid())
-            {
-                JKUtility.Log(Format("[JKSession] ⚠ Invalid Detected! text : {1} (Object: {2} / Global: {3})`n"
-                    , this.text, this.session.insSessionNum, JKSession.curSessionNum))
-                
-                return this.Destroy()
-            }
-
-            ; 옵션 없으면 이전 옵션 재적용
-            if(option = "")
-                option := this.prevOption
-
-            if(this.prevOption != option)
-                this.prevOption := option
-            
-            this.aGUI.Show(option)
-        }
-        else
-            this.aGUI.Hide()
-
-        this.isVisible := value
-    }
-
-    /**
-     * #### 오버레이 제거
-     * *
-     * @returns {void}
-     */
-    Destroy() {
-        try this.aGUI.Hide()
-        try this.aGUI.Destroy()
-        this.aGUI := unset
-        this.isValid := false
-    }
-
-    ; 소멸자
-    __Delete() {
-        try this.Destroy()
-    }
-}
-
-/** 설정 클래스
- * @description 설정 저장에 필요없는 변수는 _ 붙이기
- */
-class SettingData
-{
-    /** @type {Bool} */
-    enableOverlay := true
-
-    /** @type {String} */
-    version := "1.0.0"
-
-    /**
-     * #### 설정 파일 경로
-     * @type {String} 
-     * @readonly
-     */
-    static _PATH => A_ScriptDir . "\Setting.json"
-
-    /**
-     * #### 설정 저장
-     * *
-     * @returns {bool} - 저장 성공 유무
-     */
-    Save()
-    {
-        try
-        {
-            jsonStr := jsongo.Stringify(this.ToMap(), , 4)
-
-            ; 기존 파일 제거
-            if(FileExist(SettingData._PATH))
-                FileDelete(SettingData._PATH)
-
-            FileAppend(jsonStr, SettingData._PATH, "UTF-8")
-
-            return true
-        }
-        catch Error as e 
-        {
-            MsgBox(
-                "오류 발생 위치: " . e.Line . "번째 줄`n" .
-                "발생 함수: " . e.What . "`n" .
-                "메시지: " . e.Message
-            )
-
-            return false
-        }
-    }
-
-    /**
-     * #### 설정 불러오기
-     * *
-     * @returns {SettingData} - 설정 객체
-     */
-    static Load()
-    {
-        ; 설정 파일 존재 확인
-        if(!FileExist(this._PATH))
-            ; 없다면 초기값 반환
-            return SettingData()
-
-        try {
-            jsonData := FileRead(this._PATH, "UTF-8")
-            ; json => map 변환
-            mapData := jsongo._Parse(jsonData)
-            
-            ; map => 클래스 변환
-            return JKUtility.MapToClass(mapData, SettingData)
-        } 
-        catch Error as e 
-        {
-            MsgBox("정상 로드 실패, 초기값 반환: " . e.Message)
-
-            return SettingData()
-        }    
-
-    }
-
-    /**
-     * #### 필요 변수만 저장용 맵으로 변환
-     * *
-     * @returns {Map} - 설정 저장용
-     */
-    ToMap()
-    {
-        /** @type {Map} */
-        resultMap := Map()
-
-        for name, value in this.OwnProps()
-        {
-            ; 불필요 변수 스킵
-            if(SubStr(name, 1, 1) = "_")
-                continue
-
-            resultMap[name] := value
-        }
-
-        return resultMap
-    }
-}
 
 /** MARK: 스크립트 진행 구조
  * 0. 스크립트 시작 | {@link AppManager.BeginPlay}
@@ -263,11 +61,12 @@ class AppManager
 {
     ; MARK: 변수 영역
 
-    /** @type {SettingData} */
-    static _settings := SettingData.Load()
+    /** @type {JKSettings} */
+    static _settings := JKSettings.Load()
     /**
      * #### 설정 데이터
-     * @type {SettingData} 
+     * @type {JKSettings} 
+     * @see JKSettings
      * @readonly
     */
     static SETTINGS => this._settings
@@ -318,7 +117,6 @@ class AppManager
         }
     }
     
-
     /**
      * #### 전체 가상키 데이터
      * @type {HotKeyInfo} 
@@ -332,14 +130,6 @@ class AppManager
      * @default false
      */
     static checkStart := false
-
-    /** 
-     * #### 가상키 오버레이 투명도
-     * @type {number} 
-     * @range `0` ~ `255`
-     * @default `100`  
-     */
-    static overlayOpacity := 100
 
     /** @private */
     static _isActive := false
@@ -361,6 +151,39 @@ class AppManager
         }
     }
 
+   
+
+    ; 오버레이 활성 여부
+    static IsOverlayActive
+    {
+        get => this.SETTINGS.enableOverlay
+        set
+        {
+            ; 비활성=>비활성 스킵
+            if(this.SETTINGS.enableOverlay == false && value == false)
+                return
+
+            this.SETTINGS.enableOverlay := value
+
+            ; 오버레이 생성 재료
+            overlayContext := false
+            if(this.IsOverlayActive)
+            {
+                overlayContext := {
+                    hwnd: WinActive(this.CurTargetTitle)
+                    ,hkInfo: this.curHKInfo
+                    ,settings: this.SETTINGS
+                }
+            }
+
+            ; 상태 변경 딜리게이트 실행
+            for callback in this.OnOverlayStateChangedDel {
+                if (HasMethod(callback)) ; 안전을 위한 체크
+                    callback(value, overlayContext)
+            }
+        }
+    }
+
     /** @private */
     static _isScriptActive := true
     /**
@@ -372,34 +195,24 @@ class AppManager
         get => this._isScriptActive
         set {
             this._isScriptActive := value
+
             ; 현재 가상키를 제거 처리
             HotKeyManager.RemoveHotKey()
+            OverlayManager.ClearOverlay()
 
-            this.ClearOverlay()
             ; true로 변경될때는 isactive의 활성 유무 다시 체크
             if(value == true)
                 this.IsActive := this.FindSheetName(this.curTargetTitle)
         }
     }
 
-    /** @type {Number} */
-    static _curSessionNum := 0
-    /**
-     * #### 현재 가상키 세션
-     * @description 스크립트 시작할때 0 으로 시작해서, {@link AppManager.OnActiveChanged} 실행 될때, ++1 하고,
-     * 가상키랑 오버레이 for 문으로 생성하는 부분에서 {@link HotKeyManager.CreateAllHotKey} 실행될 때 세션 번호랑 일치하는 지 체크해서
-     * 최신 가상키만 유지시키도록 함.
-     * @type {Number} 
-     * @default 0
-     */
-    static CurSessionNum
-    {
-        get => this._curSessionNum
-        set
-        {
-            this._curSessionNum := value
-        }
-    }
+    ; MARK: 딜리게이트 단
+    
+    ; callback(isOverlayActive)
+    ; 오버레이 활성 상태 변경 딜리게이트
+    static OnOverlayStateChangedDel := []
+
+    
     
 
     ; MARK: 함수 영역
@@ -411,6 +224,9 @@ class AppManager
      */
     static BeginPlay()
     {
+        ; 오버레이 상태 변경 딜리게이트 바인딩
+        this.OnOverlayStateChangedDel.Push(OverlayManager.OnOverlayStateChanged.Bind(OverlayManager))
+
         ; 최초 프로그램 시작 대기
         SetTimer(() => AppManager.WaitStartProgram(), -5000)
 
@@ -456,6 +272,7 @@ class AppManager
         ; HSHELL_RUDEAPPACTIVATED || HSHELL_WINDOWACTIVATED
         if (wParam = 0x8004 || wParam = 4) 
         { 
+            ; FIXME 이거 사실 v1 유산이래 함수.Bind(this) 이게 v2 방식
             SetTimer(ObjBindMethod(this, "AsyncCheckFocus", lParam), -1)
         }
     }
@@ -507,7 +324,7 @@ class AppManager
         
         ; 현재 가상키, 오버레이 제거
         HotKeyManager.RemoveHotKey()
-        this.ClearOverlay()
+        OverlayManager.ClearOverlay()
 
         if(this.IsScriptActive && this.IsActive)
         {
@@ -518,8 +335,11 @@ class AppManager
             ; 가상키 매니저에 데이터 업데이트
             HotKeyManager.SetupHotKey(this.curHKInfo)
 
-            ; 오버레이 생성
-            this.CreateOverlay(processHandle, this.curHKInfo)
+            if(this.IsOverlayActive)
+            {
+                ; 오버레이 생성
+                OverlayManager.GetOrCreateOverlay(processHandle, this.curHKInfo, this.SETTINGS, true)
+            }
         }
         else if(this.checkStart)
         {
@@ -607,80 +427,6 @@ class AppManager
         return sheetName
     }
 
-    ; MARK: 오버레이 관리 영역
-
-    /**
-     * #### 가상키 오버레이 생성
-     * *
-     * @param {Number} processHandle - 적용할 프로세스 값
-     * @param {HotKeyInfo} curHKInfo - 가상키 데이터
-     * @returns {void}
-     */
-    static CreateOverlay(targetHwnd, curHKInfo)
-    {
-        if(!targetHwnd || targetHwnd = 0)
-            return
-        ; 창 위치 가져오기
-        WinGetClientPos(&outX, &outY, , , "ahk_id " targetHwnd)
-
-        /** @type {Vector2d} */
-        curClientPos := Vector2d(outX, outY)
-
-        ; 최신 세션 가져오기
-        local newSession := JKSession()
-
-        ; 새 오버레이 생성
-        for , keyData in curHKInfo.hotKeyMap
-        {
-            ; 세션 유효 검사
-            if(!newSession.Valid())
-            {
-                JKUtility.Log("오버레이 매니저 단에서 중단 session : " . newSession.insSessionNum . ", 현재 최신 세션 : " . JKSession.curSessionNum)
-                
-                this.ClearOverlay()
-                break
-            }
-
-            ; 최적화용 일시 정지
-            Sleep(-1)
-
-            /** @type {OverlayInfo} */
-            newOverlay := OverlayInfo()
-
-            ; GUI 생성 | 포커스 비활성화
-            newOverlay.aGUI := Gui("LastFound -Caption AlwaysOnTop +ToolWindow -Border")
-
-            newOverlay.aGUI.Color := "dfdfdf"
-            newOverlay.aGUI.Add("Text", "x3 y2 " , keyData.name)
-            ; 투명도 0~255
-            WinSetTransparent(this.overlayOpacity, newOverlay.aGUI.hwnd)
-
-            ; 클라 위치에 맞추어 보정
-            cx := curClientPos.x + keyData.pos.x
-            cy := curClientPos.y + keyData.pos.y
-
-            weight := 4 + StrLen(keyData.name) * 8
-        
-            oh := newOverlay.aGUI.Hwnd
-            ; 포커스 되지 않게 설정
-            DllCall("SetWindowLong", "Ptr", oh, "Int", -20, "Int", 0x80000 | 0x20 | 0x8)
-
-            ; 오버레이 위치 업데이트
-            option := "NoActivate w" weight " h15 x" cx " y" cy
-            ; 설정에 따라 오버레이 활성화
-            newOverlay.SetActive(this.SETTINGS.enableOverlay, option)
-
-            if(!newOverlay.isValid)
-            {
-                JKUtility.Log("예전 오버레이 자괴 됨 : " . newOverlay.text . newOverlay.session.insSessionNum)
-            }    
-            
-
-            ; 오버레이 맵에 추가
-            curHKInfo.overlayMap[newOverlay.aGUI.Hwnd] := newOverlay
-        }
-    }
-
     /**
      * #### 오버레이 토글
      * *
@@ -688,36 +434,7 @@ class AppManager
      */
     static ToggleOverlay()
     {
-        this.SETTINGS.enableOverlay := !this.SETTINGS.enableOverlay
-
-        processHandle := WinActive(this.CurTargetTitle)
-
-        if(this.SETTINGS.enableOverlay)
-        {
-            this.CreateOverlay(processHandle
-                            , this.curHKInfo)
-
-        }
-        else
-            this.ClearOverlay()
-    }
-
-    ; 오버레이 초기화
-    /**
-     * #### 오버레이 초기화
-     * *
-     * @see OverlayInfo
-     * @returns {void}
-     */
-    static ClearOverlay()
-    {
-        oldMap := this.curHKInfo.overlayMap
-        this.curHKInfo.overlayMap := Map()
-
-        for , overlayObj in oldMap
-        {
-            overlayObj.Destroy()
-        }
+        this.IsOverlayActive := !this.IsOverlayActive
     }
 
     /**
