@@ -24,7 +24,7 @@ class JKSettings
     overlayBGColor := "dfdfdf"
 
     /** @type {String} */
-    version := "1.0.0"
+    version := "0.0.1"
 
     /**
      * #### 설정 파일 경로

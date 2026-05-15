@@ -7,8 +7,8 @@
 /************************************************************************
  * @description 가상키 담당 관리 클래스
  * @author JKAKK
- * @date 2026/05/05
- * @version 0.0.4
+ * @date 2026/05/16
+ * @version 0.0.5
  ***********************************************************************/
 class HotKeyManager
 {
@@ -22,9 +22,16 @@ class HotKeyManager
     static hotKeyObjPoolMap := Map()
 
     /**
+     * #### 현재 활성화된 가상키 맵
+     * @type {Map} 
+     * @default null
+     */
+    static curActiveHotKeyMap := Map()
+
+    /**
      * #### 현재 목표 게임명
      * @type {String} 
-     * @default null
+     * @default ""
      */
     static curTargetTitle := ""
 
@@ -115,8 +122,11 @@ class HotKeyManager
                 return false
         }
 
+        ; 기존 풀 존재 확인
+        /** @type {JKHotKey} */
+        newHotKey := this.hotKeyObjPoolMap.Get(newHKName, false)
         ; 해당 핫키가 이미 생성된 경우 내용 업데이트 및 활성화
-        if(this.hotKeyObjPoolMap.Has(newHKName))
+        if(newHotKey)
         {
             this.hotKeyObjPoolMap[newHKName].Update(keyData)
             this.hotKeyObjPoolMap[newHKName].Bind()
@@ -128,6 +138,9 @@ class HotKeyManager
             ; 풀에 추가
             this.hotKeyObjPoolMap[newHKName] := newHotKey
         }
+
+        ; 현재 활성화 풀에 추가
+        this.curActiveHotKeyMap[newHKName] := newHotKey
     }
 
     /**
@@ -138,8 +151,11 @@ class HotKeyManager
      */
     static RemoveHotKey()
     {
+        oldMap := this.curActiveHotKeyMap
+        this.curActiveHotKeyMap := Map()
+
         ; 핫키 비활성화
-        for , oneHKObj in this.hotKeyObjPoolMap
+        for , oneHKObj in oldMap
         {
             oneHKObj.Unbind()
         }                                
