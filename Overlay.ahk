@@ -1,12 +1,13 @@
 #Requires AutoHotkey v2.0
 #Include Utility.ahk
 #Include JKSession.ahk
+#Include JKSettings.ahk
 
 /************************************************************************
  * @description 오버레이 관련 스크립트
  * @author JKAKK
- * @date 2026/05/11
- * @version 0.0.3
+ * @date 2026/05/16
+ * @version 0.0.4
  ***********************************************************************/
 
 
@@ -22,10 +23,18 @@ class JKOverlay
      */
     pos := Vector2d()
 
-    ; 오버레이 폭
+    /**
+     * #### 오버레이 폭
+     * @type {Number} 
+     * @default 0
+     */
     width := 0
 
-    /** @type {Gui} */
+    /**
+     * #### gui 객체
+     * @type {Gui} 
+     * @default null
+     */
     aGUI := unset
 
     /**
@@ -50,21 +59,20 @@ class JKOverlay
         get => this._isVisible
         set
         {
-            this._isVisible := value
-
             ; 유효성 검사
-            if(!this.isValid)
+            if(!this.isActive)
             {
-                JKUtility.Log("제거상태 오버레이 접근" . this.name)
+                JKUtility.Log("비활성 상태 오버레이 접근" . this.name)
                 return
             }
 
+            this._isVisible := value
             if(value)
             {
                 ; 최신 세션 체크해서 예전꺼면 자괴
                 if(!this.session.Valid())
                 {
-                    JKUtility.Log(Format("[JKSession] ⚠ Invalid Detected! text : {1} (Object: {2} / Global: {3})`n"
+                    JKUtility.Log(Format("[JKSession] ⚠ Session Invalid Detected! text : {1} (Object: {2} / Global: {3})`n"
                         , this.name, this.session.insSessionNum, JKSession.curSessionNum))
                     
                     return this.Destroy()
@@ -75,11 +83,16 @@ class JKOverlay
             }
             else
                 this.aGUI.Hide()
-            }
+        }
     }
 
     ; 존재 유효 유무
-    isValid := true
+    /**
+     * #### 활성 유무
+     * @type {자료형} 
+     * @default null
+     */
+    isActive := true
 
     /**
      * #### gui show 옵션
@@ -92,7 +105,7 @@ class JKOverlay
      * #### 세션
      * @type {JKSession} 
      * @see JKSession
-     * @default null
+     * @default 0
      */
     session := 0
 
@@ -122,30 +135,24 @@ class JKOverlay
     {
         JKSession.UpdateOrCreateSession(this)
 
-        this.isValid := true
+        this.isActive := true
         this.name := guiText[3]
-        
-
         this.aGUI.BackColor := guiBGColor
+        this.pos := pos
+        this.width := width
+
         ; 컨트롤 존재 여부 확인 후 처리
         if (!this.HasProp("txtCtrl")) 
-        {
             ; 처음 실행될 때: 컨트롤 생성 및 저장
             this.txtCtrl := this.aGUI.Add(guiText*) 
-        } 
         else 
-        {
             ; 이미 생성된 이후: 값만 업데이트
             this.txtCtrl.Value := this.name
-        }
         
         ; 투명도
         WinSetTransparent(opacity, this.aGUI.Hwnd)
 
-        this.pos := pos
-        this.width := width
-
-        JKUtility.Log("gui hwnd: " . this.aGUI.Hwnd . " keyname : " . this.name . " ctrlV : " . this.txtCtrl.Value)
+        ; JKUtility.Log("gui hwnd: " . this.aGUI.Hwnd . " keyname : " . this.name . " ctrlV : " . this.txtCtrl.Value)
     }
 
     /**
@@ -160,16 +167,21 @@ class JKOverlay
     }
 
     ; 오버레이 비활성화
+    /**
+     * #### 오버레이 비활성화
+     * *
+     * @returns {void}
+     */
     Disactive()
     {
         this.IsVisible := false  
         try this.txtCtrl.Value := ""
-        this.isValid := false
+        this.isActive := false
     }
 
     /**
      * #### 오버레이 제거
-     * *
+     * @description 오브젝트 풀 추가해서 재사용해야하니 실질 미사용
      * @returns {void}
      */
     Destroy() {
@@ -196,10 +208,25 @@ class OverlayManager
      */
     static overlayObjPoolMap := Map()
 
-    ; 현재 활성화된 오버레이 맵
-    static overlayActiveMap := Map()
+    /**
+     * #### 현재 활성화된 오버레이 맵
+     * @type {Map} 
+     * @default null
+     */
+    static curActiveOverlayMap := Map()
 
     ; 오버레이 상태 변경
+    /**
+     * #### 오버레이 상태 변경
+     * *
+     * @param {bool} isActive - 활성 유무
+     * @param {Array} overlayContext - 오버레이 데이터 overlayContext := {
+                                        hwnd: WinActive(this.CurTargetTitle)
+                                        ,hkInfo: this.curHKInfo
+                                        ,settings: this.SETTINGS
+                                    }
+     * @returns {void} - 반환값 설명
+     */
     static OnOverlayStateChanged(isActive, overlayContext)
     {
         if(isActive)
@@ -224,14 +251,17 @@ class OverlayManager
     static GetOrCreateOverlay(targetHwnd, curHKInfo, settings, isActive := true)
     {
         if(!targetHwnd || targetHwnd = 0)
+        {
+            JKUtility.Log("hwnd 없음: " . targetHwnd)
             return
+        }
         ; 창 위치 가져오기
         WinGetClientPos(&outX, &outY, , , "ahk_id " targetHwnd)
 
         /** @type {Vector2d} */
         curClientPos := Vector2d(outX, outY)
 
-        ; 최신 세션 가져오기
+        ; for 생성 중 확인할 세션
         local newSession := JKSession()
 
         ; 새 오버레이 생성
@@ -269,18 +299,14 @@ class OverlayManager
             newOverlay := this.overlayObjPoolMap.Get(keyName, false)
             ; 있으면 업데이트 하고 재사용
             if(newOverlay)
-            {
                 newOverlay.Update(newOverlayPos, newOpacity, newOverlayWidth, newGuiBGColor, newGuiText)
-            }
             else
-            {
                 newOverlay := JKOverlay(newOverlayPos, newOpacity, newOverlayWidth, newGuiOption, newGuiBGColor, newGuiText)
-            }
 
             ; 설정에 따라 오버레이 활성화
             newOverlay.SetVisible(isActive)
 
-            if(!newOverlay.isValid)
+            if(!newOverlay.isActive)
             {
                 JKUtility.Log("생성 중단된 오버레이 자괴 됨 : " . newOverlay.name . newOverlay.session.insSessionNum)
                 
@@ -289,22 +315,21 @@ class OverlayManager
 
             ; 오브젝트 풀, 활성 오버레이 맵에 추가
             this.overlayObjPoolMap[newOverlay.name] := newOverlay
-            this.overlayActiveMap[newOverlay.name] := newOverlay
+            this.curActiveOverlayMap[newOverlay.name] := newOverlay
         }
 
-        JKUtility.Log("생성 종료")
+        ; JKUtility.Log("생성 종료")
     }
 
     /**
      * #### 오버레이 비활성화
-     * *
-     * @see OverlayInfo
+     * 
      * @returns {void}
      */
     static ClearOverlay()
     {
-        oldMap := this.overlayActiveMap
-        this.overlayActiveMap := Map()
+        oldMap := this.curActiveOverlayMap
+        this.curActiveOverlayMap := Map()
 
         for , overlayObj in oldMap
         {

@@ -10,14 +10,13 @@
 /************************************************************************
  * @description 스크립트 총괄 클래스
  * @author JKAKK
- * @date 2026/05/05
- * @version 0.1.0
+ * @date 2026/05/16
+ * @version 0.2.0
  ***********************************************************************/
 
 ; MARK: 클래스 선언
 
-/** 가상키 데이터, 오버레이 객체를 전부 가지고 있는 청사진 클래스 
-*/
+/** 가상키 데이터, 오버레이 객체를 전부 가지고 있는 청사진 클래스 */
 class HotKeyInfo
 {
     /**
@@ -28,6 +27,47 @@ class HotKeyInfo
      * @example for key, keyData in this.hotKeyMap
      */
     hotKeyMap := Map()
+}
+
+/** 가상키 데이터 */
+class KeyData
+{
+    /** @type {String} */
+    name := ""
+
+    /** @type {Vector2d} */
+    pos := Vector2d()
+
+    /** @type {String} */
+    type := ""
+
+    /** @type {String} */
+    description := ""
+
+    /**
+     * #### 생성자
+     * *
+     * @param {Map} sheetDataMap - 가상키 데이터 시트 맵 | 헤더 name, x, y, type, description
+     * @returns {void}
+     */
+    __New(sheetDataMap := [])
+    {
+        this.name := sheetDataMap["name"]
+        this.pos := Vector2d(sheetDataMap["x"], sheetDataMap["y"])
+        this.type := sheetDataMap["type"]
+        this.description := sheetDataMap["description"]
+    }
+
+    /**
+     * #### 클래스 데이터 출력
+     * *
+     * @returns {String}
+     */
+    ToString()
+    {
+        return Format("name : {1}, pos : {2}, type : {3}, desc : {4}"
+        , this.name, this.pos.ToString(), this.type, this.description)
+    }
 }
 
 
@@ -42,7 +82,8 @@ class HotKeyInfo
  * -> 다르면 시트에 해당 게임명 있는지 검사 | {@link AppManager.FindGameName}
  *
  * 있으면 키매핑 데이터 불러오기 | {@link AppManager.LoadKeyData}
- * -> 해당 게임 키매핑 생성 | {@link HotKeyManager.CreateHotKey}  
+ * -> 해당 게임 키매핑 생성 | {@link HotKeyManager.CreateAllHotKey}  
+ * -> 오버레이 생성 | {@link OverlayManager.GetOrCreateOverlay}
  * 
  * 없으면 전체 프로세스에 목표 게임 존재 체크
  * -> 없으면 스크립트 종료 {@link AppManager.CloseScript}
@@ -108,9 +149,6 @@ class AppManager
             ; 가상키 매니저에 업데이트
             HotKeyManager.OnTargetChanged(value)
 
-            ; 현재 오버레이 제거
-            ; this.ClearOverlay()
-
             ; 시트에 있는 게임인지 체크해서 활성 유무 변경
             this.IsActive := this.FindSheetName(value)
             /** {@link AppManager.OnActiveChanged} */ 
@@ -131,7 +169,7 @@ class AppManager
      */
     static checkStart := false
 
-    /** @private */
+    /** @type {bool} */
     static _isActive := false
     /**
      * #### 핫키 활성 여부
@@ -151,9 +189,11 @@ class AppManager
         }
     }
 
-   
-
-    ; 오버레이 활성 여부
+    /**
+     * #### 오버레이 활성 여부
+     * @type {bool} 
+     * @default true
+     */
     static IsOverlayActive
     {
         get => this.SETTINGS.enableOverlay
@@ -177,23 +217,26 @@ class AppManager
             }
 
             ; 상태 변경 딜리게이트 실행
-            for callback in this.OnOverlayStateChangedDel {
+            for callback in this.OnOverlayStateChangedDel 
+            {
                 if (HasMethod(callback)) ; 안전을 위한 체크
                     callback(value, overlayContext)
             }
         }
     }
 
-    /** @private */
+    /** @type {bool} */
     static _isScriptActive := true
     /**
      * #### 스크립트 활성 여부
      * @type {bool} 
      * @default true
      */
-    static IsScriptActive {
+    static IsScriptActive 
+    {
         get => this._isScriptActive
-        set {
+        set 
+        {
             this._isScriptActive := value
 
             ; 현재 가상키를 제거 처리
@@ -208,8 +251,14 @@ class AppManager
 
     ; MARK: 딜리게이트 단
     
-    ; callback(isOverlayActive)
-    ; 오버레이 활성 상태 변경 딜리게이트
+    /**
+     * #### 오버레이 활성 상태 변경 딜리게이트
+     * @type {Array<BoundFunc>} 
+     * @see OverlayManager.OnOverlayStateChanged
+     * @example callback(isOverlayActive, overlayContext)
+     * @description overlayContext == 오버레이 업데이트 용 데이터
+     * @default []
+     */
     static OnOverlayStateChangedDel := []
 
     
@@ -318,9 +367,12 @@ class AppManager
         ; 가상키 신규 세션
         JKSession.curSessionNum++
 
-        JKUtility.Log("--------------------------------------------------`n")
-        JKUtility.Log(Format(">>> Global Session Updated to: {1}`n", JKSession.curSessionNum))
-        JKUtility.Log("--------------------------------------------------`n")
+        JKUtility.Log(Format(
+            "--------------------------------------------------`n" .
+            ">>> Global Session Updated to: {1}`n" .
+            "--------------------------------------------------", 
+            JKSession.curSessionNum
+        ))
         
         ; 현재 가상키, 오버레이 제거
         HotKeyManager.RemoveHotKey()

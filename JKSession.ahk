@@ -1,6 +1,13 @@
 #Requires AutoHotkey v2.0
 #Include Utility.ahk
 
+/************************************************************************
+ * @description 유효성 판단용 세션
+ * @author JKAKK
+ * @date 2026/05/16
+ * @version 0.0.2
+ ***********************************************************************/
+
 ; 가상키등의 유효성 판단용 세션
 class JKSession
 {
@@ -36,7 +43,16 @@ class JKSession
         return isValid
     }
 
-    ; 있으면 업데이트, 없으면 새 세션 발급
+    /**
+     * #### 세션 업데이트 or 동적 생성
+     * *
+     * @description 해당 클래스가 세션 객체 가지고 있으면 업데이트, 없으면 발급
+     * @param {Object} targetObj - 세션을 가질 객체
+     * @param {String} propName - 세션 속성의 이름
+     * 
+     * @example JKSession.UpdateOrCreateSession(this, "session")
+     * @returns {void}
+     */
     static UpdateOrCreateSession(targetObj, propName := "session")
     {
         if(targetObj.%propName%)

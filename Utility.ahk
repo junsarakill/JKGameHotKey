@@ -1,5 +1,12 @@
 #Requires AutoHotkey v2.0
 
+/************************************************************************
+ * @description 유용한 전역 기능들
+ * @author JKAKK
+ * @date 2026/05/16
+ * @version 0.0.1
+ ***********************************************************************/
+
 /** x,y 2차원 자료구조 */
 class Vector2d {
     /** @type {Number} */
@@ -30,47 +37,6 @@ class Vector2d {
     ToString()
     {
         return Format("x : {1}, y : {2}", this.x, this.y)
-    }
-}
-
-/** 가상키 데이터 */
-class KeyData
-{
-    /** @type {String} */
-    name := ""
-
-    /** @type {Vector2d} */
-    pos := Vector2d()
-
-    /** @type {String} */
-    type := ""
-
-    /** @type {String} */
-    description := ""
-
-    /**
-     * #### 생성자
-     * *
-     * @param {Map} sheetDataMap - 가상키 데이터 시트 맵 | 헤더 name, x, y, type, description
-     * @returns {void}
-     */
-    __New(sheetDataMap := [])
-    {
-        this.name := sheetDataMap["name"]
-        this.pos := Vector2d(sheetDataMap["x"], sheetDataMap["y"])
-        this.type := sheetDataMap["type"]
-        this.description := sheetDataMap["description"]
-    }
-
-    /**
-     * #### 클래스 데이터 출력
-     * *
-     * @returns {String}
-     */
-    ToString()
-    {
-        return Format("name : {1}, pos : {2}, type : {3}, desc : {4}"
-        , this.name, this.pos.ToString(), this.type, this.description)
     }
 }
 
@@ -242,7 +208,13 @@ class JKUtility {
      */
     static Log(msg) 
     {
-        OutputDebug(msg "`n") ; 디버그 뷰어용
-        try FileAppend(msg "`n", "*") ; VS Code 터미널(Stdout) 출력용
+        ; 로그 호출 위치
+        logLocation := Error("", -1)
+        SplitPath(logLocation.File, &fileName)
+
+        fullMsg := msg . " <== [ " . fileName . ":" . logLocation.Line . "]`n" 
+
+        OutputDebug(fullMsg) ; 디버그 뷰어용
+        try FileAppend(fullMsg, "*") ; VS Code 터미널(Stdout) 출력용
     }
 }
