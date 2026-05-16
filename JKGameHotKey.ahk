@@ -304,7 +304,7 @@ class AppManager
         DllCall("RegisterShellHookWindow", "ptr", A_ScriptHwnd)
 
         ; SHELLHOOK 메시지를 수신합니다.
-        OnMessage(DllCall("RegisterWindowMessage", "str", "SHELLHOOK"), ObjBindMethod(this, "ShellHook")) 
+        OnMessage(DllCall("RegisterWindowMessage", "str", "SHELLHOOK"), this.ShellHook.Bind(this)) 
     }
 
     /**
@@ -321,8 +321,7 @@ class AppManager
         ; HSHELL_RUDEAPPACTIVATED || HSHELL_WINDOWACTIVATED
         if (wParam = 0x8004 || wParam = 4) 
         { 
-            ; FIXME 이거 사실 v1 유산이래 함수.Bind(this) 이게 v2 방식
-            SetTimer(ObjBindMethod(this, "AsyncCheckFocus", lParam), -1)
+            SetTimer(this.AsyncCheckFocus.Bind(this, lParam), -1)
         }
     }
 

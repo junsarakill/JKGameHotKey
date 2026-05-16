@@ -108,14 +108,11 @@ class HotKeyManager
             return false
 
         newHKName := "$" . keyData.name
-        bindMethodName := ""
         ; 인풋 타입에 따라 결정
         switch  inputType {
             case "down":
-                bindMethodName := "OnKeyDown"
             case "up":
                 newHKName .= " up"
-                bindMethodName := "OnKeyUp"
 
             default:
                 JKUtility.Log("잘못된 가상키 입력 타입 요청: " . keyData.ToString())
@@ -134,7 +131,7 @@ class HotKeyManager
         ; 없으면 새로 생성
         else
         {
-            newHotKey := JKHotKey(newHKName, ObjBindMethod(this, bindMethodName), keyData, "On", )
+            newHotKey := JKHotKey(newHKName, this.OnKeyEvent.Bind(this, inputType), keyData, "On", )
             ; 풀에 추가
             this.hotKeyObjPoolMap[newHKName] := newHotKey
         }
@@ -185,14 +182,14 @@ class HotKeyManager
     }
 
     /**
-     * ;@@ 나중에 통합 해보기 objmethodbind 가 인자 여러개 가능해보임 분기처리
      * #### 클릭 이벤트 : 입력 가능시
      * *
-     * @see HotKeyManager.CreateHotKey - 바인딩 위치
+     * @see HotKeyManager.GetOrCreateHotKey - 바인딩 위치
      * @param {String} keyName - 키 이름
+     * @param {String} inputType - 입력 타입
      * @returns {void}
      */
-    static OnKeyDown(keyName)
+    static OnKeyEvent(inputType, keyName)
     {
         ; 좌표 가져오기 및 입력 체크| 입력 불가시 return
         if(!this.GetKeyPos(&pos2D, keyName))
@@ -202,30 +199,20 @@ class HotKeyManager
         if(!WinActive(this.curTargetTitle))
             return
 
+        downOrUp := ''
+        switch inputType {
+            case "down":
+                downOrUp := 'D'
+            case "up":
+                downOrUp := 'U'
+
+            default:
+                JKUtility.Log("잘못된 inputType : " . inputType)
+                return
+        }
+
         ; 해당 좌표 클릭
-        MouseClick('L',pos2D.x,pos2D.y, 1,2,'D')
+        MouseClick('L',pos2D.x,pos2D.y, 1,2,downOrUp)
         return
-    }
-
-    /**
-     * #### 릴리스 이벤트 : 입력 가능시
-     * *
-     * @see HotKeyManager.CreateHotKey - 바인딩 위치
-     * @param {String} keyName - 키 이름
-     * @returns {void}
-     */
-    static OnKeyUp(keyName)
-    {   
-        ; 좌표 가져오기 및 입력 체크| 입력 불가시 return
-        if(!this.GetKeyPos(&pos2D, keyName))
-            return
-        
-        ; 현재 활성창 체크
-        if(!WinActive(this.curTargetTitle))
-            return
-
-        ; 해당 좌표 클릭 해제
-        MouseClick('L',pos2D.x,pos2D.y, 1,2,'U')
-        return                       
     }
 }
