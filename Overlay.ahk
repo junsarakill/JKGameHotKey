@@ -121,22 +121,23 @@ class JKOverlay
     __New(pos, opacity := 255, width := 12
         , guiOption := "", guiBGColor := "FFFFFF", guiText := ["","",""]) 
     {
-        this.aGUI := Gui(guiOption)
+        this.aGUI := Gui()
         
         ; 포커스 되지 않게 설정
         DllCall("SetWindowLong", "Ptr", this.aGUI.Hwnd, "Int", -20, "Int", 0x80000 | 0x20 | 0x8)
 
         ; 나머지 변수는 업데이트
-        this.Update(pos, opacity, width, guiBGColor, guiText)
+        this.Update(pos, opacity, width, guiOption,guiBGColor, guiText)
     }
 
     ; 업데이트
-    Update(pos, opacity := 255, width := 12, guiBGColor := "FFFFFF", guiText := ["","",""])
+    Update(pos, opacity := 255, width := 12, guiOption := "",guiBGColor := "FFFFFF", guiText := ["","",""])
     {
         JKSession.UpdateOrCreateSession(this)
 
         this.isActive := true
         this.name := guiText[3]
+        this.aGUI.Opt(guiOption)
         this.aGUI.BackColor := guiBGColor
         this.pos := pos
         this.width := width
@@ -255,11 +256,6 @@ class OverlayManager
             JKUtility.Log("hwnd 없음: " . targetHwnd)
             return
         }
-        ; 창 위치 가져오기
-        WinGetClientPos(&outX, &outY, , , "ahk_id " targetHwnd)
-
-        /** @type {Vector2d} */
-        curClientPos := Vector2d(outX, outY)
 
         ; for 생성 중 확인할 세션
         local newSession := JKSession()
@@ -279,16 +275,12 @@ class OverlayManager
             ; 최적화용 일시 정지
             Sleep(-1)
 
-            ; ===오버레이 객체 용 인자 설정
-            ; 클라 위치에 맞추어 보정
-            cx := curClientPos.x + keyData.pos.x
-            cy := curClientPos.y + keyData.pos.y
-
-            newOverlayPos := Vector2d(cx, cy)
+            ; MARK: 오버레이 객체 용 인자 설정
+            newOverlayPos := keyData.pos
             newOverlayWidth := 4 + StrLen(keyData.name) * 8
             newOpacity := settings.overlayOpacity
 
-            newGuiOption := "-Caption AlwaysOnTop +ToolWindow -Border"
+            newGuiOption := "-Caption AlwaysOnTop +ToolWindow -Border +Parent" . targetHwnd
             newGuiBGColor := settings.overlayBGColor
             ; 사용시 * 뒤에 붙이기
             newGuiText := ["Text", "x3 y2 " , keyData.name]
@@ -299,7 +291,7 @@ class OverlayManager
             newOverlay := this.overlayObjPoolMap.Get(keyName, false)
             ; 있으면 업데이트 하고 재사용
             if(newOverlay)
-                newOverlay.Update(newOverlayPos, newOpacity, newOverlayWidth, newGuiBGColor, newGuiText)
+                newOverlay.Update(newOverlayPos, newOpacity, newOverlayWidth, newGuiOption, newGuiBGColor, newGuiText)
             else
                 newOverlay := JKOverlay(newOverlayPos, newOpacity, newOverlayWidth, newGuiOption, newGuiBGColor, newGuiText)
 
