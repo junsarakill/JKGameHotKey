@@ -9,7 +9,8 @@
  ***********************************************************************/
 
 /** #### 범용 사용 클래스 */
-class JKUtility extends JKUtilityBase{
+class JKUtility extends JKUtilityBase 
+{
     ; MARK: 전역 변수 단
 
     /** @type {String} */
@@ -24,6 +25,21 @@ class JKUtility extends JKUtilityBase{
 
     static LoadPrioritySheetData(csvFolderPath, csvFileName)
     {
-        super.LoadPrioritySheetData(csvFolderPath, csvFileName)
+        return super.LoadPrioritySheetData(csvFolderPath, csvFileName)
+    }
+
+    static RunAdmin()
+    {
+        super.RunAdmin()
+    }
+
+    static MapToClass(mapData, classType)
+    {
+        return super.MapToClass(mapData, classType)
+    }
+
+    static Log(msg)
+    {
+        super.Log(msg)
     }
 }
