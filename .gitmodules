@@ -1,4 +1,4 @@
-[submodule "lib/jk-utility"]
-	path = lib/jk-utility
+[submodule "Lib/jk-utility"]
+	path = Lib/jk-utility
 	url = https://github.com/junsarakill/jk-utility.git
 	branch = main
