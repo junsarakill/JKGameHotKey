@@ -52,10 +52,13 @@ class KeyData
      */
     __New(sheetDataMap := [])
     {
-        this.name := sheetDataMap["name"]
-        this.pos := Vector2d(sheetDataMap["x"], sheetDataMap["y"])
-        this.type := sheetDataMap["type"]
-        this.description := sheetDataMap["description"]
+        try 
+        {
+            this.name := sheetDataMap["name"]
+            this.pos := Vector2d(sheetDataMap["x"], sheetDataMap["y"])
+            this.type := sheetDataMap["type"]
+            this.description := sheetDataMap["description"]
+        }
     }
 
     /**
@@ -127,9 +130,9 @@ class AppManager
     static KEY_SHEET_NAME => "JK_AHK_SheetNameKey"
 
     /**
-     * #### 게임명 : 파일명 정보 구조체 | 배열 { 맵[헤더] : 값 }
-     * @type {Array} 
-     * @default Ary[Map[Header]:value]
+     * #### 게임명 : 파일명 정보 마스터맵 | 맵 [마스터키헤더 : {맵[헤더] : 값}]
+     * @type {Map} 
+     * @default Map["gameName":{Map[header:value]}]
      */
     static sheetNameTable := JKUtility.LoadPrioritySheetData(JKUtility.SHEET_FOLDER, this.KEY_SHEET_NAME)
 
@@ -396,9 +399,9 @@ class AppManager
         {
             ; 전체 프로세스에 시트 게임이 하나도 없는지 체크
             isEnd := true
-            for row in this.sheetNameTable
+            for gameName, in this.sheetNameTable
             {
-                if(WinExist(row["gameName"]))
+                if(WinExist(gameName))
                 {
                     isEnd := false
                     break
@@ -422,7 +425,7 @@ class AppManager
      * #### 해당 게임명에 대한 가상키 데이터 불러오기 + 기본 키 데이터
      * *
      * @param {String} gameName - 게임명
-     * @returns {Map} - 가상키 데이터 맵
+     * @returns {Map} - 가상키 데이터 맵 | Map["name":KeyData()]
      */
     static LoadKeyData(gameName)
     {
@@ -430,28 +433,25 @@ class AppManager
         sheetName := this.FindSheetName(gameName)
 
         ; 비 존재시 함수 종료
-        if(sheetName = false)
+        if(!sheetName)
             return Map()
 
-        gameKeyData := JKUtility.LoadPrioritySheetData(JKUtility.KEY_DATA_FOLDER, sheetName)
+        ; 키 데이터 가져오기
+        gameKeyDataTable := JKUtility.LoadPrioritySheetData(JKUtility.KEY_DATA_FOLDER, sheetName)
 
-        defaultKeyData := JKUtility.LoadPrioritySheetData(JKUtility.KEY_DATA_FOLDER, this.DEFAULT_KEY_SHEET_NAME)
+        defaultKeyDataTable := JKUtility.LoadPrioritySheetData(JKUtility.KEY_DATA_FOLDER, this.DEFAULT_KEY_SHEET_NAME)
 
         ; 결합
-        fullKeyData := []
-        fullKeyData.Push(gameKeyData*)
-        fullKeyData.Push(defaultKeyData*)
-
-        ; 반환 값 선언
-        keyDataMap := Map()
-        ; 가상키 데이터 클래스로 변환
-        for oneData in fullKeyData
+        fullKeyDataTable := gameKeyDataTable.Clone()
+        for keyHeader, keyDataObj in defaultKeyDataTable
         {
-            keyDataMap[oneData["name"]] := KeyData(oneData)
+            fullKeyDataTable[keyHeader] := keyDataObj
         }
 
-        ; 가상키 데이터 맵 반환
-        return keyDataMap
+        ; 내부 시트값 클래스화
+        fullKeyDataMap := JKUtility.MasterMapToClassMap(fullKeyDataTable, KeyData)
+
+        return fullKeyDataMap
     }
     
     /**
@@ -465,14 +465,10 @@ class AppManager
     {
         sheetName := ""
 
-        ; 시트 이름 테이블에서 찾아보기
-        for row in this.sheetNameTable
+        try
         {
-            if(row["gameName"] = gameName)
-            {
-                sheetName := row["sheetName"]
-                break
-            }
+            ; 시트 이름 테이블에서 찾아보기
+            sheetName := this.sheetNameTable[gameName]["sheetName"]
         }
 
         return sheetName

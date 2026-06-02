@@ -23,9 +23,9 @@ class JKUtility extends JKUtilityBase
     
     ; MARK: 전역 함수 단
 
-    static LoadPrioritySheetData(csvFolderPath, csvFileName)
+    static LoadPrioritySheetData(csvFolderPath, csvFileName, keyHeader := "")
     {
-        return super.LoadPrioritySheetData(csvFolderPath, csvFileName)
+        return super.LoadPrioritySheetData(csvFolderPath, csvFileName, keyHeader)
     }
 
     static RunAdmin()

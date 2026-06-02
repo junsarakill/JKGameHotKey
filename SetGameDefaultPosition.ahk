@@ -56,20 +56,16 @@ class SetGameDefaultPosition
     ; MARK: 변수 영역
 
     /** @type {String} */
-    static _defaultPosSheetName := "JK_GameDefaultPosition" . JKUtility.SHEET_EXT
-    /** @type {String} */
-    static DEFAULT_POS_SHEET_NAME => this._defaultPosSheetName
-    
-    /** @type {String} */
-    static _defaultPosSheetPath := JKUtility.SHEET_FOLDER . this.DEFAULT_POS_SHEET_NAME
+    static _defaultPosSheetName := "JK_GameDefaultPosition"
     /**
-     * #### 기본 위치 시트 경로
-     * @type {String} 
+     * #### 기본 위치 시트명
+     * @type {자료형} 
+     * @readonly
      */
-    static DEFAULT_POS_SHEET_PATH => this._defaultPosSheetPath
+    static DEFAULT_POS_SHEET_NAME => this._defaultPosSheetName
 
     /** @type {Array} */
-    static _defaultPosData := this.LoadDefaultPosSheetData(this.DEFAULT_POS_SHEET_PATH)
+    static _defaultPosData := this.LoadDefaultPosSheetData(JKUtility.SHEET_FOLDER, this.DEFAULT_POS_SHEET_NAME)
     /**
      * #### 기본 위치 데이터
      * @type {Array} - Array{PosData} 
@@ -81,22 +77,15 @@ class SetGameDefaultPosition
     /**
      * #### 기본 위치 시트 데이터 PosData 클래스 배열로 변환
      * *
-     * @param {String} defaultPosSheetPath - 시트 경로
      * @returns {Array} - Array{PosData}
      */
-    static LoadDefaultPosSheetData(defaultPosSheetPath)
+    static LoadDefaultPosSheetData(csvFolderPath, csvFileName)
     {
-        ; 맵 변환한 시트 데이터 배열
-        dataAry := JKUtility.LoadSheetData(defaultPosSheetPath)
-        
-        ; PosData 배열 형태로 반환할 값
-        posDataAry := []
-        for oneData in dataAry
-        {
-            onePosData := PosData.NewFromMap(oneData)
+        ; 시트 데이터 불러오기
+        sheetDataTable := JKUtility.LoadPrioritySheetData(csvFolderPath, csvFileName)
 
-            posDataAry.Push(onePosData)
-        }
+        ; 클래스화 하고 배열로 반환
+        posDataAry := JKUtility.MasterMapToClassAry(sheetDataTable, posData)
 
         return posDataAry
     }
