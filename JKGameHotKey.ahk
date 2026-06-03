@@ -16,7 +16,7 @@
 
 ; MARK: 클래스 선언
 
-/** 가상키 데이터, 오버레이 객체를 전부 가지고 있는 청사진 클래스 */
+/** 가상키 데이터 청사진 클래스 */
 class HotKeyInfo
 {
     /**
@@ -82,7 +82,7 @@ class KeyData
  * -> 포커스 체크 | {@link AppManager.CheckFocus}
  * -> 현재 매핑 게임명과 같은지 검사
  * -> 다르면 키매핑 제거 | {@link HotKeyManager.RemoveHotKey}
- * -> 다르면 시트에 해당 게임명 있는지 검사 | {@link AppManager.FindGameName}
+ * -> 다르면 시트에 해당 게임명 있는지 검사 | {@link AppManager.FindSheetName}
  *
  * 있으면 키매핑 데이터 불러오기 | {@link AppManager.LoadKeyData}
  * -> 해당 게임 키매핑 생성 | {@link HotKeyManager.CreateAllHotKey}  
@@ -91,10 +91,8 @@ class KeyData
  * 없으면 전체 프로세스에 목표 게임 존재 체크
  * -> 없으면 스크립트 종료 {@link AppManager.CloseScript}
  * 
- * 3. 가상키 누르기 | {@link  HotKeyManager.OnKeyDown}
+ * 3. 가상키 누르기 | {@link  HotKeyManager.OnKeyEvent}
  * -> 해당 키 좌표 가져오기 | {@link  HotKeyManager.GetKeyPos}
- * -> 해당 좌표 클릭 | {@link HotKeyManager.OnKeyDown}
- * -> 가상키 떼기 | {@link HotKeyManager.OnKeyUp}
  * 
  */
 
@@ -322,13 +320,19 @@ class AppManager
     static ShellHook(wParam, lParam, *) 
     {
         ; HSHELL_RUDEAPPACTIVATED || HSHELL_WINDOWACTIVATED
+        ; 0x8004(강제 활성화) 또는 4(일반 활성화)인 경우 체크
         if (wParam = 0x8004 || wParam = 4) 
         { 
+            ; 바로 넘기면 과부하로 오류 발생해서 비동기 처리
             SetTimer(this.AsyncCheckFocus.Bind(this, lParam), -1)
         }
     }
 
-    ; 비동기 처리
+    /**
+     * #### 목표 게임 확인 비동기 처리
+     * *
+     * @param {Number} lParam - 포커스된 창 핸들
+     */
     static AsyncCheckFocus(lParam)
     {
         ; lParam이 0이면 현재 활성 창의 핸들을 가져옵니다.
