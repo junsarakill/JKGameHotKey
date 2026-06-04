@@ -11,12 +11,28 @@
 ; 가상키등의 유효성 판단용 세션
 class JKSession
 {
+
+    /** @type {Number} */
+    static _curSessionNum := 0
     /**
      * #### 최신 세션 번호 | 앱 매니저가 관리
      * @type {Number} 
      * @default 0
      */
-    static curSessionNum := 0
+    static CurSessionNum
+    {
+        get => this._curSessionNum
+        set
+        {
+            this._curSessionNum := Value
+            JKUtility.Log(Format(
+            "--------------------------------------------------`n" .
+            ">>> Global Session Updated to: {1}`n" .
+            "--------------------------------------------------", 
+            Value
+            ))
+        }
+    }
 
     /**
      * #### 객체들이 가질 고유 세션 번호
@@ -34,12 +50,12 @@ class JKSession
 
     Update()
     {
-        this.insSessionNum := JKSession.curSessionNum
+        this.insSessionNum := JKSession.CurSessionNum
     }
 
     Valid()
     {
-        isValid := this.insSessionNum == JKSession.curSessionNum
+        isValid := this.insSessionNum == JKSession.CurSessionNum
         return isValid
     }
 
@@ -55,7 +71,7 @@ class JKSession
      */
     static UpdateOrCreateSession(targetObj, propName := "session")
     {
-        if(targetObj.%propName%)
+        if (HasProp(targetObj, propName) && targetObj.%propName% is JKSession)
             targetObj.%propName%.Update()
         else
             targetObj.%propName% := JKSession()

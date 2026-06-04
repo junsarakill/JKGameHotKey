@@ -41,7 +41,7 @@ class JKHotKey
                 if(!this.session.Valid())
                 {
                     OutputDebug(Format("[JKSession] ⚠ Invalid Detected! keyName : {1} (Object: {2} / Global: {3})`n"
-                    , this.keyName, this.session.insSessionNum, JKSession.curSessionNum))
+                    , this.keyName, this.session.insSessionNum, JKSession.CurSessionNum))
 
                     return this.Destroy()
                 }

@@ -78,7 +78,7 @@ class HotKeyManager
             if(!newSession.Valid())
             {
                 ; 현재 생성 중단
-                JKUtility.Log("핫키 매니저 단에서 중단 session : " . newSession.insSessionNum . ", 현재 최신 세션 : " . JKSession.curSessionNum)
+                JKUtility.Log("핫키 매니저 단에서 중단 session : " . newSession.insSessionNum . ", 현재 최신 세션 : " . JKSession.CurSessionNum)
                 
                 this.RemoveHotKey()
                 break

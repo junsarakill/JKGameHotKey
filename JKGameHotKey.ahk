@@ -164,11 +164,20 @@ class AppManager
     static curHKInfo := HotKeyInfo()
 
     /**
+     * #### 스크립트 시작 대기 시간
+     * @type {Number} 
+     * @see AppManager.BeginPlay
+     * @readonly
+     * @default 5000
+     */
+    static SCRIPT_START_DELAY_MS => 5000
+
+    /**
      * #### 스크립트 시작 대기 여부
      * @type {Bool} 
      * @default false
      */
-    static checkStart := false
+    static canCloseScript := false
 
     /** @type {bool} */
     static _isActive := false
@@ -278,7 +287,7 @@ class AppManager
         this.OnOverlayStateChangedDel.Push(OverlayManager.OnOverlayStateChanged.Bind(OverlayManager))
 
         ; 최초 프로그램 시작 대기
-        SetTimer(() => AppManager.WaitStartProgram(), -5000)
+        this.WaitStartProgram(this.SCRIPT_START_DELAY_MS)
 
         ; 포커스 체크 딜리게이트 등록
         this.BindFocusChange()
@@ -289,9 +298,13 @@ class AppManager
      * *
      * @returns {void}
      */
-    static WaitStartProgram()
+    static WaitStartProgram(delayMs := 0)
     {
-        this.checkStart := true
+        ; 1회성 타이머를 위해 내부에서 음수로 변환 (절댓값 활용)
+        local negativeDelay := -Abs(delayMs)
+
+        SetTimer(() => this.canCloseScript := true
+        , negativeDelay)
     }
 
     /**
@@ -304,8 +317,11 @@ class AppManager
         ; 스크립트 핸들을 등록합니다.
         DllCall("RegisterShellHookWindow", "ptr", A_ScriptHwnd)
 
+        ; 추후 활용시 프로퍼티화 할 딜리게이트
+        local shellHookDel := this.ShellHook.Bind(this)
+
         ; SHELLHOOK 메시지를 수신합니다.
-        OnMessage(DllCall("RegisterWindowMessage", "str", "SHELLHOOK"), this.ShellHook.Bind(this)) 
+        OnMessage(DllCall("RegisterWindowMessage", "str", "SHELLHOOK"), shellHookDel) 
     }
 
     /**
@@ -322,10 +338,8 @@ class AppManager
         ; HSHELL_RUDEAPPACTIVATED || HSHELL_WINDOWACTIVATED
         ; 0x8004(강제 활성화) 또는 4(일반 활성화)인 경우 체크
         if (wParam = 0x8004 || wParam = 4) 
-        { 
             ; 바로 넘기면 과부하로 오류 발생해서 비동기 처리
             SetTimer(this.AsyncCheckFocus.Bind(this, lParam), -1)
-        }
     }
 
     /**
@@ -371,14 +385,7 @@ class AppManager
     static OnActiveChanged()
     {
         ; 가상키 신규 세션
-        JKSession.curSessionNum++
-
-        JKUtility.Log(Format(
-            "--------------------------------------------------`n" .
-            ">>> Global Session Updated to: {1}`n" .
-            "--------------------------------------------------", 
-            JKSession.curSessionNum
-        ))
+        JKSession.CurSessionNum++
         
         ; 현재 가상키, 오버레이 제거
         HotKeyManager.RemoveHotKey()
@@ -393,35 +400,21 @@ class AppManager
             ; 가상키 매니저에 데이터 업데이트
             HotKeyManager.SetupHotKey(this.curHKInfo)
 
+            ; 오버레이 생성
             if(this.IsOverlayActive)
-            {
-                ; 오버레이 생성
                 OverlayManager.GetOrCreateOverlay(processHandle, this.curHKInfo, this.SETTINGS, true)
-            }
         }
-        else if(this.checkStart)
+        else if(this.canCloseScript)
         {
             ; 전체 프로세스에 시트 게임이 하나도 없는지 체크
-            isEnd := true
             for gameName, in this.sheetNameTable
             {
                 if(WinExist(gameName))
-                {
-                    isEnd := false
-                    break
-                }
+                    return
             }
             
             ; 없으면 스크립트 종료
-            if(isEnd)
-            {
-                exitMsg := "목표 게임 없음. 핫 키 종료"
-                JKUtility.Log(exitMsg)
-                ToolTip(exitMsg)
-
-                Sleep(1000) 
-                this.CloseScript()
-            }
+            this.CloseScript()
         }
     }
 
@@ -501,12 +494,19 @@ class AppManager
     /**
      * #### 스크립트 종료
      * *
+     * @see AppManager.OnActiveChanged
      * @returns {void}
      */
     static CloseScript()
     {
         ; 설정 저장
         this.SETTINGS.Save()
+
+        exitMsg := "목표 게임 없음. 핫 키 종료"
+        JKUtility.Log(exitMsg)
+        ToolTip(exitMsg)
+
+        Sleep(1000) 
 
         ExitApp()
     }

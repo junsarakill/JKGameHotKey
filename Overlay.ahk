@@ -73,7 +73,7 @@ class JKOverlay
                 if(!this.session.Valid())
                 {
                     JKUtility.Log(Format("[JKSession] ⚠ Session Invalid Detected! text : {1} (Object: {2} / Global: {3})`n"
-                        , this.name, this.session.insSessionNum, JKSession.curSessionNum))
+                        , this.name, this.session.insSessionNum, JKSession.CurSessionNum))
                     
                     return this.Destroy()
                 }
@@ -266,7 +266,7 @@ class OverlayManager
             ; 세션 유효 검사
             if(!newSession.Valid())
             {
-                JKUtility.Log("오버레이 매니저 단에서 중단 session : " . newSession.insSessionNum . ", 현재 최신 세션 : " . JKSession.curSessionNum)
+                JKUtility.Log("오버레이 매니저 단에서 중단 session : " . newSession.insSessionNum . ", 현재 최신 세션 : " . JKSession.CurSessionNum)
                 
                 this.ClearOverlay()
                 break
