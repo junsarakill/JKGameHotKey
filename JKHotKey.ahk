@@ -109,6 +109,19 @@ class JKHotKey
      */
     desc := ""
 
+    /** @type {bool} */
+    _isPressed := false
+    ; XXX 가상키 눌림 상태
+    IsPressed
+    {
+        get => this._isPressed
+        set
+        {
+            this._isPressed := Value
+            
+        }
+    }
+
     ; MARK: 함수 영역
     ; 생성자
     __New(keyName, callback, keyData, option := "", tag := "")
@@ -149,6 +162,7 @@ class JKHotKey
     ; 바인드 해제 및 비활성화
     Unbind()
     {
+        this.IsPressed := false
         this.IsActive := false
     }
 

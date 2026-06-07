@@ -35,6 +35,13 @@ class HotKeyManager
      */
     static curTargetTitle := ""
 
+    ; 마우스 원래 위치
+    /** @type {Vector2d} */
+    static mouseOriginAxis := Vector2d()
+
+    ; 핫키 작동 down 상태
+    static isPressed := false
+
     ; MARK: 함수 영역
 
     /**
@@ -199,13 +206,32 @@ class HotKeyManager
         if(!WinActive(this.curTargetTitle))
             return
 
+        /** @type {JKHotKey} */
+        hkObj := this.hotKeyObjPoolMap.Get(keyName, "")
+        if(hkObj = "")
+            return
+        
         downOrUp := ''
         switch inputType {
             case "down":
-                downOrUp := 'D'
-            case "up":
-                downOrUp := 'U'
+            {
+                if(this.isPressed)
+                    return
+                this.isPressed := true
 
+                downOrUp := 'D'
+                ; 마우스 원래 위치 기록
+                MouseGetPos(&mx,&my)
+                this.mouseOriginAxis := Vector2d(mx,my)
+            }
+            case "up":
+            {
+                if(!this.isPressed)
+                    return
+                this.isPressed := false
+
+                downOrUp := 'U'
+            }
             default:
                 JKUtility.Log("잘못된 inputType : " . inputType)
                 return
@@ -213,6 +239,13 @@ class HotKeyManager
 
         ; 해당 좌표 클릭
         MouseClick('L',pos2D.x,pos2D.y, 1,2,downOrUp)
+        JKUtility.Log("키 눌림: " hkObj.keyName " 상태 : " downOrUp " flag " this.IsPressed)
+
+        ; 키를 떼면 마우스 원래 위치로 이동
+        if(downOrUp = 'U')
+        {
+            MouseMove(this.mouseOriginAxis.x, this.mouseOriginAxis.y, 0)   
+        }
         return
     }
 }
