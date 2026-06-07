@@ -244,7 +244,8 @@ class HotKeyManager
         ; 키를 떼면 마우스 원래 위치로 이동
         if(downOrUp = 'U')
         {
-            MouseMove(this.mouseOriginAxis.x, this.mouseOriginAxis.y, 0)   
+            ; 너무 빨리 원복하면 키가 씹히는 경우 발생. 지연 약간
+            SetTimer(() => MouseMove(this.mouseOriginAxis.x, this.mouseOriginAxis.y, 0), -20)
         }
         return
     }
