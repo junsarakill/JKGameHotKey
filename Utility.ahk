@@ -42,4 +42,9 @@ class JKUtility extends JKUtilityBase
     {
         super.Log(msg)
     }
+
+    static SetVisibleCursor(value)
+    {
+        super.SetVisibleCursor(value)
+    }
 }

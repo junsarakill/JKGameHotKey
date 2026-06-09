@@ -304,7 +304,6 @@ class HotKeyManager
 
         ; 해당 좌표 클릭
         MouseClick('L',pos2D.x,pos2D.y, 1,2,downOrUp)
-        ; JKUtility.Log("키 눌림: " hkObj.keyName " 상태 : " downOrUp " flag " this.IsPressed)
 
         ; 키를 떼면 마우스 원래 위치로 이동
         if(downOrUp = 'U')
@@ -312,10 +311,7 @@ class HotKeyManager
             ; 너무 빨리 원복하면 키가 씹히는 경우 발생. 지연 약간
             SetTimer(() => 
             MouseMove(this.mouseOriginAxis.x, this.mouseOriginAxis.y, 0)
-            JKUtility.SetVisibleCursor(true)
-            , -20)
-            FakeCursor.IsVisible := false
+            FakeCursor.IsVisible := false, -20)
         }
-        return
     }
 }
