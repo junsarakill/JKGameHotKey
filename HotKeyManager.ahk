@@ -275,7 +275,8 @@ class HotKeyManager
             return
         
         downOrUp := ''
-        switch inputType {
+        switch inputType 
+        {
             case "down":
             {
                 if(this.isPressed)
