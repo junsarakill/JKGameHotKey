@@ -96,7 +96,7 @@ class JKSettings
     /**
      * #### 필요 변수만 저장용 맵으로 변환
      * *
-     * @returns {Map} - 설정 저장용
+     * @returns {Map<String, String>} - 설정 저장용
      */
     ToMap()
     {

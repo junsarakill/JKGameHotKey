@@ -17,9 +17,9 @@
 class JKOverlay
 {
     /**
-     * #### 오버레이 위치
-     * @description 클라위치 + 클라 내 위치 보정된 결과 값
+     * #### 클라위치 + 클라 내 위치 보정된 값
      * @type {Vector2d} 
+     * @default 0,0
      */
     pos := Vector2d()
 
@@ -54,17 +54,13 @@ class JKOverlay
      * @type {bool} 
      * @default false
      */
-    IsVisible
-    {
+    IsVisible {
         get => this._isVisible
         set
         {
             ; 유효성 검사
             if(!this.isActive)
-            {
-                JKUtility.Log("비활성 상태 오버레이 접근" . this.name)
-                return
-            }
+                return JKUtility.Log("비활성 상태 오버레이 접근" . this.name)
 
             this._isVisible := value
             if(value)
@@ -79,7 +75,7 @@ class JKOverlay
                 }
                 
                 ; gui 활성화
-                this.aGUI.Show(this.GuiShowOption)
+                this.aGUI.Show(this.GUI_SHOW_OPTION)
             }
             else
                 this.aGUI.Hide()
@@ -90,16 +86,15 @@ class JKOverlay
     /**
      * #### 활성 유무
      * @type {자료형} 
-     * @default null
+     * @default true
      */
     isActive := true
 
     /**
      * #### gui show 옵션
      * @type {String} 
-     * @default null
      */
-    GuiShowOption => "NoActivate w" . this.width . " h15 x" . this.pos.x . " y" . this.pos.y
+    GUI_SHOW_OPTION => "NoActivate w" . this.width . " h15 x" . this.pos.x . " y" . this.pos.y
 
     /**
      * #### 세션
@@ -115,8 +110,7 @@ class JKOverlay
      * @param {Number} width - 오버레이 가로 길이
      * @param {String} guiOption - gui 옵션
      * @param {String} guiBGColor - 배경색
-     * @param {Array} guiText - ["Text", 위치, keyName]
-     * @returns {OverlayInfo}
+     * @param {Array<String>} guiText - gui텍스트 컨텍스트 | newGuiText := ["Text", "x3 y2 " , keyData.name]
      */
     __New(pos, opacity := 255, width := 12
         , guiOption := "", guiBGColor := "FFFFFF", guiText := ["","",""]) 
@@ -126,11 +120,20 @@ class JKOverlay
         ; 포커스 되지 않게 설정
         DllCall("SetWindowLong", "Ptr", this.aGUI.Hwnd, "Int", -20, "Int", 0x80000 | 0x20 | 0x8)
 
-        ; 나머지 변수는 업데이트
+        ; 나머지 변수는 업데이트 처리
         this.Update(pos, opacity, width, guiOption,guiBGColor, guiText)
     }
 
-    ; 업데이트
+    /**
+     * #### 오버레이 업데이트
+     * @param {Vector2d} pos - 클라+위치 보정된 위치 좌표
+     * @param {Number} opacity - 투명도 0~255
+     * @param {Number} width - 오버레이 가로 길이
+     * @param {String} guiOption - gui 옵션
+     * @param {String} guiBGColor - 배경색
+     * @param {Array<String>} guiText - gui텍스트 컨텍스트 | newGuiText := ["Text", "x3 y2 " , keyData.name]
+     * @returns {void}
+     */
     Update(pos, opacity := 255, width := 12, guiOption := "",guiBGColor := "FFFFFF", guiText := ["","",""])
     {
         JKSession.UpdateOrCreateSession(this)
@@ -167,10 +170,8 @@ class JKOverlay
         this.IsVisible := value
     }
 
-    ; 오버레이 비활성화
     /**
      * #### 오버레이 비활성화
-     * *
      * @returns {void}
      */
     Disactive()
@@ -185,14 +186,16 @@ class JKOverlay
      * @description 오브젝트 풀 추가해서 재사용해야하니 실질 미사용
      * @returns {void}
      */
-    Destroy() {
+    Destroy() 
+    {
         this.Disactive()
         try this.aGUI.Destroy()
         this.aGUI := unset
     }
 
     ; 소멸자
-    __Delete() {
+    __Delete() 
+    {
         try this.Destroy()
     }
 }
@@ -216,16 +219,11 @@ class OverlayManager
      */
     static curActiveOverlayMap := Map()
 
-    ; 오버레이 상태 변경
     /**
      * #### 오버레이 상태 변경
      * *
      * @param {bool} isActive - 활성 유무
-     * @param {Array} overlayContext - 오버레이 데이터 overlayContext := {
-                                        hwnd: WinActive(this.CurTargetTitle)
-                                        ,hkInfo: this.curHKInfo
-                                        ,settings: this.SETTINGS
-                                    }
+     * @param {Array<Number,HotKeyInfo,JKSettings>} overlayContext - 오버레이 새 데이터
      * @returns {void} - 반환값 설명
      */
     static OnOverlayStateChanged(isActive, overlayContext)
@@ -233,8 +231,8 @@ class OverlayManager
         if(isActive)
         {
             this.GetOrCreateOverlay(overlayContext.hwnd
-                            , overlayContext.hkInfo
-                            , overlayContext.settings, true)
+                                  , overlayContext.hkInfo
+                                  , overlayContext.settings, true)
         }
         else
             this.ClearOverlay()
@@ -242,7 +240,6 @@ class OverlayManager
 
     /**
      * #### 가상키 오버레이 생성
-     * *
      * @param {Number} processHandle - 적용할 프로세스 값
      * @param {HotKeyInfo} curHKInfo - 가상키 데이터
      * @param {JKSettings} settings - 설정 데이터
@@ -309,8 +306,6 @@ class OverlayManager
             this.overlayObjPoolMap[newOverlay.name] := newOverlay
             this.curActiveOverlayMap[newOverlay.name] := newOverlay
         }
-
-        ; JKUtility.Log("생성 종료")
     }
 
     /**

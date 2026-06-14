@@ -10,8 +10,8 @@
 /************************************************************************
  * @description 스크립트 총괄 클래스
  * @author JKAKK
- * @date 2026/05/16
- * @version 0.2.0
+ * @date 2026/06/15
+ * @version 0.3.0
  ***********************************************************************/
 
 ; MARK: 클래스 선언
@@ -139,12 +139,12 @@ class AppManager
     /**
      * #### 현재 목표 게임명
      * @type {String} 
-     * @default null
      * @description 목표 변경시 가상키 재할당
      */
     static CurTargetTitle {
         get => this._curTargetTitle
-        set {
+        set 
+        {
             this._curTargetTitle := value
 
             ; 가상키 매니저에 업데이트
@@ -349,9 +349,8 @@ class AppManager
      */
     static AsyncCheckFocus(lParam)
     {
-        ; lParam이 0이면 현재 활성 창의 핸들을 가져옵니다.
+        ; lParam이 0이면 현재 활성 창의 핸들을 가져오기
         hwnd := lParam || WinExist("A") 
-
         if(!hwnd) 
             return
 
@@ -368,7 +367,6 @@ class AppManager
      */
     static CheckFocus(curTitle) 
     {
-        ; 현재 목표 게임인지 체크
         if(this.CurTargetTitle = curTitle)
             return
 
@@ -419,10 +417,9 @@ class AppManager
     }
 
     /**
-     * #### 해당 게임명에 대한 가상키 데이터 불러오기 + 기본 키 데이터
-     * *
+     * #### 해당 게임명에 대한 전용+기본 가상키 데이터 불러오기
      * @param {String} gameName - 게임명
-     * @returns {Map} - 가상키 데이터 맵 | Map["name":KeyData()]
+     * @returns {Map<String, KeyData>} - 가상키 데이터 맵
      */
     static LoadKeyData(gameName)
     {
@@ -454,7 +451,6 @@ class AppManager
     /**
      * #### 게임명으로 가상키 시트 파일명 찾기
      * @description 부가기능으로 해당 게임명이 시트에 존재하는지 확인 가능
-     * *
      * @param {String} gameName - 게임명
      * @returns {String} - 시트 파일명
      */
@@ -473,7 +469,6 @@ class AppManager
 
     /**
      * #### 오버레이 토글
-     * *
      * @returns {void}
      */
     static ToggleOverlay()
@@ -483,7 +478,6 @@ class AppManager
 
     /**
      * #### 스크립트 활성화 토글
-     * *
      * @returns {void}
      */
     static ToggleScript()
@@ -493,7 +487,6 @@ class AppManager
 
     /**
      * #### 스크립트 종료
-     * *
      * @see AppManager.OnActiveChanged
      * @returns {void}
      */
