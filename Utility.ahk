@@ -38,11 +38,6 @@ class JKUtility extends JKUtilityBase
         return super.MapToClass(mapData, classType)
     }
 
-    static Log(msg)
-    {
-        super.Log(msg)
-    }
-
     static SetVisibleCursor(value)
     {
         super.SetVisibleCursor(value)
