@@ -21,7 +21,7 @@ class HotKeyInfo
 {
     /**
      * #### 가상키 데이터 맵
-     * @type {Map} 
+     * @type {Map<String, KeyData>} 
      * @default null
      * @see keyData
      * @example for key, keyData in this.hotKeyMap
@@ -130,7 +130,7 @@ class AppManager
 
     /**
      * #### 게임명 : 파일명 정보 마스터맵 | 맵 [마스터키헤더 : {맵[헤더] : 값}]
-     * @type {Map} 
+     * @type {Map<String, Map<String, String>>} 
      * @default Map["gameName":{Map[header:value]}]
      */
     static sheetNameTable := JKUtility.LoadPrioritySheetData(JKUtility.SHEET_FOLDER, this.KEY_SHEET_NAME)
@@ -160,7 +160,7 @@ class AppManager
     /**
      * #### 전체 가상키 데이터
      * @type {HotKeyInfo} 
-     * @default null
+     * @default HotKeyInfo()
      */
     static curHKInfo := HotKeyInfo()
 
