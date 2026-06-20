@@ -245,9 +245,12 @@ class HotKeyManager
             return false
         }
 
-        /** @type {JKHotKey} */
-        pos2D := hkObj.pos
+        targetHwnd := WinExist(this.curTargetTitle)
+        /** @type {Vector2d} */
+        winPos := Vector2d.WinGetClientSize(targetHwnd)
 
+        pos2D := winPos.Multiply(hkObj.pos)
+        
         return true
     }
 

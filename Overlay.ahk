@@ -273,7 +273,9 @@ class OverlayManager
             Sleep(-1)
 
             ; MARK: 오버레이 객체 용 인자 설정
-            newOverlayPos := keyData.pos
+            winPos := Vector2d.WinGetClientSize(targetHwnd)
+            
+            newOverlayPos := winPos.Multiply(keyData.pos)
             newOverlayWidth := 4 + StrLen(keyData.name) * 8
             newOpacity := settings.overlayOpacity
 
