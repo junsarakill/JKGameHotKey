@@ -22,11 +22,19 @@ class HotKeyInfo
     /**
      * #### 가상키 데이터 맵
      * @type {Map<String, KeyData>} 
-     * @default null
+     * @description Map[키 이름 : 키 데이터]
      * @see keyData
      * @example for key, keyData in this.hotKeyMap
      */
     hotKeyMap := Map()
+
+    /**
+     * ;@@
+     * #### 가상키 데이터 캐시 맵
+     * @type {Map<String, Map<String, KeyData>>} 
+     * @description Map[게임이름 : Map[키 이름 : 키 데이터]]
+     */
+    cachedHKMap := Map()
 }
 
 /** 가상키 데이터 */
@@ -493,9 +501,6 @@ class AppManager
      */
     static CloseScript()
     {
-        ; 설정 저장
-        this.SETTINGS.Save()
-
         exitMsg := "목표 게임 없음. 핫 키 종료"
         JKUtility.Log(exitMsg)
         ToolTip(exitMsg)
@@ -503,6 +508,19 @@ class AppManager
         Sleep(1000) 
 
         ExitApp()
+    }
+
+    ; 스크립트 종료시 작동
+    static OnScriptExit(_exitReason, _exitCode)
+    {
+        ; 설정 저장
+        this.SETTINGS.Save()
+        
+        ; (추가할 예정인 가상키 캐시 파일 저장 로직도 여기에 위치)
+        ; KeyDataManager.SaveAllToCSV()
+
+        ; 정상 종료 허가
+        return 0
     }
 }
 
@@ -521,6 +539,9 @@ JKUtility.RunAdmin()
 
 ; shell32.dll의 44번 아이콘(별 모양)을 트레이 아이콘으로 설정
 TraySetIcon("JKGameHotKeyICO.ico")
+
+; 종료 딜리게이트 바인드
+OnExit(AppManager.OnScriptExit)
 
 ; 프로그램 시작
 AppManager.BeginPlay()
