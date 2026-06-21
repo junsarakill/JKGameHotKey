@@ -541,7 +541,7 @@ JKUtility.RunAdmin()
 TraySetIcon("JKGameHotKeyICO.ico")
 
 ; 종료 딜리게이트 바인드
-OnExit(AppManager.OnScriptExit)
+OnExit(AppManager.OnScriptExit.Bind(AppManager))
 
 ; 프로그램 시작
 AppManager.BeginPlay()
