@@ -35,6 +35,14 @@ class HotKeyInfo
      * @description Map[게임이름 : Map[키 이름 : 키 데이터]]
      */
     cachedHKMap := Map()
+
+    ; 게임명에 해당하는 가상키 데이터 얻기
+    GetKeyData(gameName)
+    {
+        ; 1. 캐시맵에 존재 확인
+
+        ; 2. 없으면 csv 파일 읽어오기
+    }
 }
 
 /** 가상키 데이터 */
@@ -427,6 +435,7 @@ class AppManager
 
     /**
      * #### 해당 게임명에 대한 전용+기본 가상키 데이터 불러오기
+     * ;@@ 이 부분 HotKeyInfo 클래스로 옮기기
      * @param {String} gameName - 게임명
      * @returns {Map<String, KeyData>} - 가상키 데이터 맵
      */
