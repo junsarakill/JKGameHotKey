@@ -16,7 +16,7 @@
 
 ; MARK: 클래스 선언
 
-/** 가상키 데이터 청사진 클래스 */
+/** 가상키 데이터 캐싱 클래스 */
 class HotKeyInfo
 {
     /**
@@ -39,10 +39,54 @@ class HotKeyInfo
     ; 게임명에 해당하는 가상키 데이터 얻기
     GetKeyData(gameName)
     {
-        ; 1. 캐시맵에 존재 확인
+        resultKeyData := Map()
 
+        ; 1. 캐시맵에 존재 확인
+        if(this.cachedHKMap.Has(gameName))
+        {
+            resultKeyData := this.cachedHKMap[gameName]
+        }
         ; 2. 없으면 csv 파일 읽어오기
+        else
+        {
+            resultKeyData := this.LoadKeyData(gameName)
+        }
     }
+
+    /**
+     * ;FIXME 점점 appmanager 시트 부분 필요한데 어떻게 할지 고민필요
+     * #### 해당 게임명에 대한 전용+기본 가상키 데이터 불러오기
+     * @param {String} gameName - 게임명
+     * @returns {Map<String, KeyData>} - 가상키 데이터 맵
+     */
+    LoadKeyData(gameName)
+    {
+        ; 게임명 시트에 존재 확인
+        sheetName := this.FindSheetName(gameName)
+
+        ; 비 존재시 함수 종료
+        if(!sheetName)
+            return Map()
+
+        ; 키 데이터 가져오기
+        gameKeyDataTable := JKUtility.LoadPrioritySheetData(JKUtility.KEY_DATA_FOLDER, sheetName)
+
+        defaultKeyDataTable := JKUtility.LoadPrioritySheetData(JKUtility.KEY_DATA_FOLDER, this.DEFAULT_KEY_SHEET_NAME)
+
+        ; 결합
+        fullKeyDataTable := gameKeyDataTable.Clone()
+        for keyHeader, keyDataObj in defaultKeyDataTable
+        {
+            fullKeyDataTable[keyHeader] := keyDataObj
+        }
+
+        ; 내부 시트값 클래스화
+        fullKeyDataMap := JKUtility.MasterMapToClassMap(fullKeyDataTable, KeyData)
+
+        return fullKeyDataMap
+    }
+
+    
 }
 
 /** 가상키 데이터 */
@@ -410,7 +454,7 @@ class AppManager
         {
             processHandle := WinActive(this.CurTargetTitle)
             ; 키 매핑 시트 데이터 가져오기
-            this.curHKInfo.hotKeyMap := this.LoadKeyData(this.CurTargetTitle)
+            this.curHKInfo.hotKeyMap := this.curHKInfo.GetKeyData(this.CurTargetTitle)
 
             ; 가상키 매니저에 데이터 업데이트
             HotKeyManager.SetupHotKey(this.curHKInfo)
@@ -434,39 +478,6 @@ class AppManager
     }
 
     /**
-     * #### 해당 게임명에 대한 전용+기본 가상키 데이터 불러오기
-     * ;@@ 이 부분 HotKeyInfo 클래스로 옮기기
-     * @param {String} gameName - 게임명
-     * @returns {Map<String, KeyData>} - 가상키 데이터 맵
-     */
-    static LoadKeyData(gameName)
-    {
-        ; 게임명 시트에 존재 확인
-        sheetName := this.FindSheetName(gameName)
-
-        ; 비 존재시 함수 종료
-        if(!sheetName)
-            return Map()
-
-        ; 키 데이터 가져오기
-        gameKeyDataTable := JKUtility.LoadPrioritySheetData(JKUtility.KEY_DATA_FOLDER, sheetName)
-
-        defaultKeyDataTable := JKUtility.LoadPrioritySheetData(JKUtility.KEY_DATA_FOLDER, this.DEFAULT_KEY_SHEET_NAME)
-
-        ; 결합
-        fullKeyDataTable := gameKeyDataTable.Clone()
-        for keyHeader, keyDataObj in defaultKeyDataTable
-        {
-            fullKeyDataTable[keyHeader] := keyDataObj
-        }
-
-        ; 내부 시트값 클래스화
-        fullKeyDataMap := JKUtility.MasterMapToClassMap(fullKeyDataTable, KeyData)
-
-        return fullKeyDataMap
-    }
-    
-    /**
      * #### 게임명으로 가상키 시트 파일명 찾기
      * @description 부가기능으로 해당 게임명이 시트에 존재하는지 확인 가능
      * @param {String} gameName - 게임명
@@ -474,16 +485,14 @@ class AppManager
      */
     static FindSheetName(gameName)
     {
-        sheetName := ""
-
-        try
-        {
-            ; 시트 이름 테이블에서 찾아보기
-            sheetName := this.sheetNameTable[gameName]["sheetName"]
-        }
+        sheetName := this.sheetNameTable.Get(gameName, "")
 
         return sheetName
     }
+
+    
+    
+    
 
     /**
      * #### 오버레이 토글

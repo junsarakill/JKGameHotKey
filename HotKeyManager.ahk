@@ -78,16 +78,14 @@ class HotKeyManager
     ; MARK: 변수 영역
     /**
      * #### 전체 가상키 오브젝트 풀
-     * @type {Map} 
-     * @default null
+     * @type {Map<String, JKHotKey>} 
      * @example hotKeyObjPoolMap[keyName] := oneHotKey
      */
     static hotKeyObjPoolMap := Map()
 
     /**
      * #### 현재 활성화된 가상키 맵
-     * @type {Map} 
-     * @default null
+     * @type {Map<String, JKHotKey>} 
      */
     static curActiveHotKeyMap := Map()
 
