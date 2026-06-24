@@ -2,7 +2,6 @@
 #Include Utility.ahk
 #Include JKHotKey.ahk
 #Include JKSession.ahk
-#Include JKSettings.ahk
 
 /************************************************************************
  * @description 가상키 담당 관리 클래스
@@ -121,26 +120,26 @@ class HotKeyManager
      * #### 가상키 데이터 업데이트
      * *
      * @description 데이터 참조로 받고 신규 가상키 생성
-     * @param {HotKeyInfo} hkInfo - 새 가상키 데이터
+     * @param {Map<String, KeyData} hkData - 새 가상키 데이터
      * @returns {void}
      */
-    static SetupHotKey(hkInfo)
+    static SetupHotKey(hkData)
     {
-        this.CreateAllHotKey(hkInfo)
+        this.CreateAllHotKey(hkData)
     }
 
     /**
      * #### 가상키 생성
      * *
      * @see JKHotKey|@see HotKeyInfo
-     * @param {HotKeyInfo} hkInfo - 가상키 데이터
+     * @param {Map<String, KeyData} hkData - 가상키 데이터
      * @returns {void}
      */
-    static CreateAllHotKey(hkInfo)
+    static CreateAllHotKey(hkData)
     {
         ; 현재 세션
         local newSession := JKSession()
-        for , keyData in hkInfo.hotKeyMap
+        for , keyData in hkData
         {
             ; 유효 검사
             if(!newSession.Valid())

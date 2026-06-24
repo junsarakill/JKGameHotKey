@@ -200,13 +200,41 @@ class JKOverlay
     }
 }
 
+; 오버레이 생성용 정보
+class OverlayCreateInfo
+{
+    /**
+     * #### 목표 핸들
+     * @type {Number} 
+     */
+    hwnd := unset
+
+    /**
+     * #### 가상키 데이터
+     * @type {Map<String, KeyData} 
+     */    
+    hkData := unset
+
+    /**
+     * #### 설정값
+     * @type {JKSettings} 
+     */
+    settings := unset
+
+    __New(hwnd, hkData, settings) 
+    {
+        this.hwnd := hwnd
+        this.hkData := hkData
+        this.settings := settings
+    }
+}
+
 ; MARK: 매니저 클래스
 class OverlayManager
 {
     /**
      * #### 전체 오버레이 오브젝트 풀
      * @type {Map} 
-     * @default null
      * @example overlayObjPoolMap[name] := oneOverlay
      * @description name == keyName, oneOverlay == JKOverlay()
      */
@@ -215,42 +243,34 @@ class OverlayManager
     /**
      * #### 현재 활성화된 오버레이 맵
      * @type {Map} 
-     * @default null
      */
     static curActiveOverlayMap := Map()
-
+    
     /**
      * #### 오버레이 상태 변경
-     * *
      * @param {bool} isActive - 활성 유무
-     * @param {Array<Number,HotKeyInfo,JKSettings>} overlayContext - 오버레이 새 데이터
+     * @param {OverlayCreateInfo} overlayContext - 오버레이 새 데이터
      * @returns {void} - 반환값 설명
      */
     static OnOverlayStateChanged(isActive, overlayContext)
     {
         if(isActive)
-        {
-            this.GetOrCreateOverlay(overlayContext.hwnd
-                                  , overlayContext.hkInfo
-                                  , overlayContext.settings, true)
-        }
+            this.GetOrCreateOverlay(overlayContext, true)
         else
             this.ClearOverlay()
     }
 
     /**
      * #### 가상키 오버레이 생성
-     * @param {Number} processHandle - 적용할 프로세스 값
-     * @param {HotKeyInfo} curHKInfo - 가상키 데이터
-     * @param {JKSettings} settings - 설정 데이터
+     * @param {OverlayCreateInfo} ocInfo - 오버레이 새 데이터
      * @param {bool} isActive - 생성 후 즉시 활성 유무
      * @returns {void}
      */
-    static GetOrCreateOverlay(targetHwnd, curHKInfo, settings, isActive := true)
+    static GetOrCreateOverlay(ocInfo, isActive := true)
     {
-        if(!targetHwnd || targetHwnd = 0)
+        if(!ocInfo.hwnd || ocInfo.hwnd = 0)
         {
-            JKUtility.Log("hwnd 없음: " . targetHwnd)
+            JKUtility.Log("hwnd 없음: " . ocInfo.hwnd)
             return
         }
 
@@ -258,7 +278,7 @@ class OverlayManager
         local newSession := JKSession()
 
         ; 새 오버레이 생성
-        for keyName, keyData in curHKInfo.hotKeyMap
+        for keyName, keyData in ocInfo.hkData
         {
             ; 세션 유효 검사
             if(!newSession.Valid())
@@ -273,14 +293,14 @@ class OverlayManager
             Sleep(-1)
 
             ; MARK: 오버레이 객체 용 인자 설정
-            winPos := Vector2d.WinGetClientSize(targetHwnd)
+            winPos := Vector2d.WinGetClientSize(ocInfo.hwnd)
             
             newOverlayPos := winPos.Multiply(keyData.pos)
             newOverlayWidth := 4 + StrLen(keyData.name) * 8
-            newOpacity := settings.overlayOpacity
+            newOpacity := ocInfo.settings.overlayOpacity
 
-            newGuiOption := "-Caption AlwaysOnTop +ToolWindow -Border +Parent" . targetHwnd
-            newGuiBGColor := settings.overlayBGColor
+            newGuiOption := "-Caption AlwaysOnTop +ToolWindow -Border +Parent" . ocInfo.hwnd
+            newGuiBGColor := ocInfo.settings.overlayBGColor
             ; 사용시 * 뒤에 붙이기
             newGuiText := ["Text", "x3 y2 " , keyData.name]
             ; ========

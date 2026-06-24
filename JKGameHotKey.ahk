@@ -16,79 +16,7 @@
 
 ; MARK: 클래스 선언
 
-/** 가상키 데이터 캐싱 클래스 */
-class HotKeyInfo
-{
-    /**
-     * #### 가상키 데이터 맵
-     * @type {Map<String, KeyData>} 
-     * @description Map[키 이름 : 키 데이터]
-     * @see keyData
-     * @example for key, keyData in this.hotKeyMap
-     */
-    hotKeyMap := Map()
-
-    /**
-     * ;@@
-     * #### 가상키 데이터 캐시 맵
-     * @type {Map<String, Map<String, KeyData>>} 
-     * @description Map[게임이름 : Map[키 이름 : 키 데이터]]
-     */
-    cachedHKMap := Map()
-
-    ; 게임명에 해당하는 가상키 데이터 얻기
-    GetKeyData(gameName)
-    {
-        resultKeyData := Map()
-
-        ; 1. 캐시맵에 존재 확인
-        if(this.cachedHKMap.Has(gameName))
-        {
-            resultKeyData := this.cachedHKMap[gameName]
-        }
-        ; 2. 없으면 csv 파일 읽어오기
-        else
-        {
-            resultKeyData := this.LoadKeyData(gameName)
-        }
-    }
-
-    /**
-     * ;FIXME 점점 appmanager 시트 부분 필요한데 어떻게 할지 고민필요
-     * #### 해당 게임명에 대한 전용+기본 가상키 데이터 불러오기
-     * @param {String} gameName - 게임명
-     * @returns {Map<String, KeyData>} - 가상키 데이터 맵
-     */
-    LoadKeyData(gameName)
-    {
-        ; 게임명 시트에 존재 확인
-        sheetName := this.FindSheetName(gameName)
-
-        ; 비 존재시 함수 종료
-        if(!sheetName)
-            return Map()
-
-        ; 키 데이터 가져오기
-        gameKeyDataTable := JKUtility.LoadPrioritySheetData(JKUtility.KEY_DATA_FOLDER, sheetName)
-
-        defaultKeyDataTable := JKUtility.LoadPrioritySheetData(JKUtility.KEY_DATA_FOLDER, this.DEFAULT_KEY_SHEET_NAME)
-
-        ; 결합
-        fullKeyDataTable := gameKeyDataTable.Clone()
-        for keyHeader, keyDataObj in defaultKeyDataTable
-        {
-            fullKeyDataTable[keyHeader] := keyDataObj
-        }
-
-        ; 내부 시트값 클래스화
-        fullKeyDataMap := JKUtility.MasterMapToClassMap(fullKeyDataTable, KeyData)
-
-        return fullKeyDataMap
-    }
-
-    
-}
-
+; @@ 스크립트로 분리해서 사용처 의존성 주입
 /** 가상키 데이터 */
 class KeyData
 {
@@ -216,13 +144,13 @@ class AppManager
             /** {@link AppManager.OnActiveChanged} */ 
         }
     }
-    
+
     /**
-     * #### 전체 가상키 데이터
-     * @type {HotKeyInfo} 
-     * @default HotKeyInfo()
+     * #### 가상키 데이터 캐시 맵
+     * @type {Map<String, Map<String, KeyData>>} 
+     * @description Map[게임이름 : Map[키 이름 : 키 데이터]]
      */
-    static curHKInfo := HotKeyInfo()
+    static _cachedHKMap := Map()
 
     /**
      * #### 스크립트 시작 대기 시간
@@ -247,9 +175,11 @@ class AppManager
      * @type {Bool} 
      * @default false
      */
-    static IsActive {
+    static IsActive 
+    {
         get => this._isActive
-        set {
+        set 
+        {
             ; 비활성=>비활성 스킵
             if(this._isActive == false && value == false)
                 return
@@ -270,29 +200,13 @@ class AppManager
         get => this.SETTINGS.enableOverlay
         set
         {
-            ; 비활성=>비활성 스킵
+            ; 비활성=>비활성 스킵 | 활성=>활성은 유효 프로그램 간 전환때 필요함
             if(this.SETTINGS.enableOverlay == false && value == false)
                 return
 
             this.SETTINGS.enableOverlay := value
-
-            ; 오버레이 생성 재료
-            overlayContext := false
-            if(this.IsOverlayActive)
-            {
-                overlayContext := {
-                    hwnd: WinActive(this.CurTargetTitle)
-                    ,hkInfo: this.curHKInfo
-                    ,settings: this.SETTINGS
-                }
-            }
-
-            ; 상태 변경 딜리게이트 실행
-            for callback in this.OnOverlayStateChangedDel 
-            {
-                if (HasMethod(callback)) ; 안전을 위한 체크
-                    callback(value, overlayContext)
-            }
+            ; 상태 변경
+            this.SetOverlayState(value)
         }
     }
 
@@ -454,14 +368,14 @@ class AppManager
         {
             processHandle := WinActive(this.CurTargetTitle)
             ; 키 매핑 시트 데이터 가져오기
-            this.curHKInfo.hotKeyMap := this.curHKInfo.GetKeyData(this.CurTargetTitle)
+            curHKData := this.GetKeyData(this.CurTargetTitle)
 
             ; 가상키 매니저에 데이터 업데이트
-            HotKeyManager.SetupHotKey(this.curHKInfo)
+            HotKeyManager.SetupHotKey(curHKData)
 
             ; 오버레이 생성
             if(this.IsOverlayActive)
-                OverlayManager.GetOrCreateOverlay(processHandle, this.curHKInfo, this.SETTINGS, true)
+                OverlayManager.GetOrCreateOverlay(OverlayCreateInfo(processHandle, curHKData, this.SETTINGS), true)
         }
         else if(this.canCloseScript)
         {
@@ -477,22 +391,90 @@ class AppManager
         }
     }
 
+    ; 게임명에 해당하는 가상키 데이터 얻기
+    static GetKeyData(gameName)
+    {
+        resultKeyData := Map()
+
+        ; 1. 캐시맵에 존재 확인
+        if(this._cachedHKMap.Has(gameName))
+            resultKeyData := this._cachedHKMap[gameName]
+        ; 2. 없으면 csv 파일 읽어와서 캐싱
+        else
+        {
+            resultKeyData := this.LoadKeyData(gameName)
+            this._cachedHKMap[gameName] := resultKeyData
+        }
+
+        return resultKeyData
+    }
+
+    /**
+     * #### 해당 게임명에 대한 전용+기본 가상키 데이터 불러오기
+     * @param {String} gameName - 게임명
+     * @returns {Map<String, KeyData>} - 가상키 데이터 맵
+     */
+    static LoadKeyData(gameName)
+    {
+        ; 게임명 시트에 존재 확인
+        sheetName := AppManager.FindSheetName(gameName)
+
+        ; 비 존재시 함수 종료
+        if(!sheetName)
+            return Map()
+
+        ; 키 데이터 가져오기
+        defaultKeyDataTable := JKUtility.LoadPrioritySheetData(JKUtility.KEY_DATA_FOLDER, AppManager.DEFAULT_KEY_SHEET_NAME)
+
+        gameKeyDataTable := JKUtility.LoadPrioritySheetData(JKUtility.KEY_DATA_FOLDER, sheetName)
+
+        ; 결합
+        fullKeyDataTable := defaultKeyDataTable.Clone()
+        for keyName, keyDataObj in gameKeyDataTable
+        {
+            fullKeyDataTable[keyName] := keyDataObj
+        }
+
+        ; 내부 시트값 클래스화
+        fullKeyDataMap := JKUtility.MasterMapToClassMap(fullKeyDataTable, KeyData)
+
+        return fullKeyDataMap
+    }
+
     /**
      * #### 게임명으로 가상키 시트 파일명 찾기
-     * @description 부가기능으로 해당 게임명이 시트에 존재하는지 확인 가능
      * @param {String} gameName - 게임명
      * @returns {String} - 시트 파일명
      */
     static FindSheetName(gameName)
     {
-        sheetName := this.sheetNameTable.Get(gameName, "")
+        sheetName := this.sheetNameTable.Has(gameName) 
+                ? this.sheetNameTable[gameName].Get("sheetName", "") 
+                : ""
 
         return sheetName
     }
 
-    
-    
-    
+    ; 오버레이 상태 변경
+    static SetOverlayState(value)
+    {
+        ; 오버레이 생성 재료
+        overlayContext := false
+        if(this.IsOverlayActive)
+        {
+            overlayContext := OverlayCreateInfo(
+                WinActive(this.CurTargetTitle)
+                , this.GetKeyData(this.CurTargetTitle)
+                , this.SETTINGS)
+        }
+
+        ; 상태 변경 딜리게이트 실행
+        for callback in this.OnOverlayStateChangedDel 
+        {
+            if (HasMethod(callback, "Call"))
+                callback(value, overlayContext)
+        }
+    }
 
     /**
      * #### 오버레이 토글
@@ -534,7 +516,7 @@ class AppManager
         ; 설정 저장
         this.SETTINGS.Save()
         
-        ; (추가할 예정인 가상키 캐시 파일 저장 로직도 여기에 위치)
+        ; @@(추가할 예정인 가상키 캐시 파일 저장 로직도 여기에 위치)
         ; KeyDataManager.SaveAllToCSV()
 
         ; 정상 종료 허가
