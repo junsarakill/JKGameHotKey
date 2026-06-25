@@ -6,6 +6,7 @@
 #Include JKSession.ahk
 #Include JKSettings.ahk
 #Include Overlay.ahk
+#Include JKHotKeyInfo.ahk
 
 /************************************************************************
  * @description 스크립트 총괄 클래스
@@ -13,55 +14,6 @@
  * @date 2026/06/15
  * @version 0.3.0
  ***********************************************************************/
-
-; MARK: 클래스 선언
-
-; @@ 스크립트로 분리해서 사용처 의존성 주입
-/** 가상키 데이터 */
-class KeyData
-{
-    /** @type {String} */
-    name := ""
-
-    /** @type {Vector2d} */
-    pos := Vector2d()
-
-    /** @type {String} */
-    type := ""
-
-    /** @type {String} */
-    description := ""
-
-    /**
-     * #### 생성자
-     * *
-     * @param {Map} sheetDataMap - 가상키 데이터 시트 맵 | 헤더 name, x, y, type, description
-     * @returns {void}
-     */
-    __New(sheetDataMap := [])
-    {
-        try 
-        {
-            this.name := sheetDataMap["name"]
-            this.pos := Vector2d(sheetDataMap["x"], sheetDataMap["y"])
-            this.type := sheetDataMap["type"]
-            this.description := sheetDataMap["description"]
-        }
-    }
-
-    /**
-     * #### 클래스 데이터 출력
-     * *
-     * @returns {String}
-     */
-    ToString()
-    {
-        return Format("name : {1}, pos : {2}, type : {3}, desc : {4}"
-        , this.name, this.pos.ToString(), this.type, this.description)
-    }
-}
-
-
 
 /** MARK: 스크립트 진행 구조
  * 0. 스크립트 시작 | {@link AppManager.BeginPlay}
@@ -147,7 +99,7 @@ class AppManager
 
     /**
      * #### 가상키 데이터 캐시 맵
-     * @type {Map<String, Map<String, KeyData>>} 
+     * @type {Map<String, Map<String, JKHotKeyInfo>>} 
      * @description Map[게임이름 : Map[키 이름 : 키 데이터]]
      */
     static _cachedHKMap := Map()
@@ -229,7 +181,7 @@ class AppManager
             OverlayManager.ClearOverlay()
 
             ; true로 변경될때는 isactive의 활성 유무 다시 체크
-            if(value == true)
+            if(value)
                 this.IsActive := this.FindSheetName(this.curTargetTitle)
         }
     }
@@ -412,7 +364,7 @@ class AppManager
     /**
      * #### 해당 게임명에 대한 전용+기본 가상키 데이터 불러오기
      * @param {String} gameName - 게임명
-     * @returns {Map<String, KeyData>} - 가상키 데이터 맵
+     * @returns {Map<String, JKHotKeyInfo>} - 가상키 데이터 맵
      */
     static LoadKeyData(gameName)
     {
@@ -436,7 +388,7 @@ class AppManager
         }
 
         ; 내부 시트값 클래스화
-        fullKeyDataMap := JKUtility.MasterMapToClassMap(fullKeyDataTable, KeyData)
+        fullKeyDataMap := JKUtility.MasterMapToClassMap(fullKeyDataTable, JKHotKeyInfo)
 
         return fullKeyDataMap
     }
@@ -513,14 +465,27 @@ class AppManager
     ; 스크립트 종료시 작동
     static OnScriptExit(_exitReason, _exitCode)
     {
-        ; 설정 저장
+        ; 데이터 저장
         this.SETTINGS.Save()
-        
-        ; @@(추가할 예정인 가상키 캐시 파일 저장 로직도 여기에 위치)
-        ; KeyDataManager.SaveAllToCSV()
+        this.SaveHKDataToCSV()
 
         ; 정상 종료 허가
         return 0
+    }
+
+    
+    static SaveHKDataToCSV()
+    {
+        for gameName, hkDataMap in this._cachedHKMap
+        {
+            ; 2. findsheetname
+            sheetName := this.FindSheetName(gameName)
+            
+            ; 3. 핫키 데이터맵을 순수 맵화
+            ; 4. 순수맵을 csv 파일로 변환
+            ; 5. 해당 파일로 저장
+
+        }
     }
 }
 

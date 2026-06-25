@@ -2,6 +2,7 @@
 #Include Utility.ahk
 #Include JKHotKey.ahk
 #Include JKSession.ahk
+#Include JKHotKeyInfo.ahk
 
 /************************************************************************
  * @description 가상키 담당 관리 클래스
@@ -120,7 +121,7 @@ class HotKeyManager
      * #### 가상키 데이터 업데이트
      * *
      * @description 데이터 참조로 받고 신규 가상키 생성
-     * @param {Map<String, KeyData} hkData - 새 가상키 데이터
+     * @param {Map<String, JKHotKeyInfo} hkData - 새 가상키 데이터
      * @returns {void}
      */
     static SetupHotKey(hkData)
@@ -131,8 +132,8 @@ class HotKeyManager
     /**
      * #### 가상키 생성
      * *
-     * @see JKHotKey|@see HotKeyInfo
-     * @param {Map<String, KeyData} hkData - 가상키 데이터
+     * @see JKHotKey|@see JKHotKeyInfo
+     * @param {Map<String, JKHotKeyInfo>} hkData - 가상키 데이터
      * @returns {void}
      */
     static CreateAllHotKey(hkData)
@@ -163,8 +164,8 @@ class HotKeyManager
     /**
      * #### 핫키 데이터 있으면 재사용, 없으면 생성
      * *
-     * @see KeyData
-     * @param {KeyData} keyData - 핫키 데이터
+     * @see JKHotKeyInfo
+     * @param {JKHotKeyInfo} keyData - 핫키 데이터
      * @param {String} inputType - 실제 키 입력 타입 | down, up
      * @returns {bool} - 제작 성공
      */

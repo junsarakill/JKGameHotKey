@@ -2,6 +2,7 @@
 #Include Utility.ahk
 #Include JKSession.ahk
 #Include JKSettings.ahk
+#Include JKHotKeyInfo.ahk
 
 /************************************************************************
  * @description 오버레이 관련 스크립트
@@ -211,7 +212,7 @@ class OverlayCreateInfo
 
     /**
      * #### 가상키 데이터
-     * @type {Map<String, KeyData} 
+     * @type {Map<String, JKHotKeyInfo} 
      */    
     hkData := unset
 

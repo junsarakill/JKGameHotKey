@@ -1,6 +1,7 @@
 #Requires AutoHotkey v2.0
 #Include Utility.ahk
 #Include JKSession.ahk
+#Include JKHotKeyInfo.ahk
 
 /************************************************************************
  * @description ahk v2 HotKey() 를 객체로 래핑 용도
@@ -142,8 +143,8 @@ class JKHotKey
 
     /**
      * #### 키 데이터 받아서 가상키 업데이트
-     * @see KeyData
-     * @param {KeyData} keyData - 새 가상키 데이터
+     * @see JKHotKeyInfo
+     * @param {JKHotKeyInfo} keyData - 새 가상키 데이터
      * @returns {void}
      */
     Update(keyData)
