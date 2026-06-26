@@ -478,13 +478,18 @@ class AppManager
     {
         for gameName, hkDataMap in this._cachedHKMap
         {
-            ; 2. findsheetname
-            sheetName := this.FindSheetName(gameName)
-            
-            ; 3. 핫키 데이터맵을 순수 맵화
-            ; 4. 순수맵을 csv 파일로 변환
-            ; 5. 해당 파일로 저장
+            ; 핫키 데이터맵을 순수 맵화
+            hkMasterMap := Map()
+            for keyName, hkInfo in hkDataMap
+            {
+                hkMasterMap[keyName] := hkInfo.ToMap()
+            }
 
+            ; 시트 이름
+            sheetName := this.FindSheetName(gameName)
+
+            ; csv 저장
+            JKUtility.SaveSheetData(JKUtility.KEY_DATA_FOLDER, sheetName, hkMasterMap, ["name", "x","y","type","description"])
         }
     }
 }

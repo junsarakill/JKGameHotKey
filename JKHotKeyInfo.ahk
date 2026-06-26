@@ -58,35 +58,30 @@ class JKHotKeyInfo
             this.name
             ,this.pos.x
             ,this.pos.y
-            ,
+            ,this.type
+            ,this.description
         ]
         
+        return resultAry
     }
-
-    ; 정보 csv 파일로 저장
-    Save(fileName)
+    
+    ToMap()
     {
-        try
-        {
-            jsonStr := jsongo.Stringify(this.ToMap(), , 4)
-
-            ; 기존 파일 제거
-            if(FileExist(JKSettings._PATH))
-                FileDelete(JKSettings._PATH)
-
-            FileAppend(jsonStr, JKSettings._PATH, "UTF-8")
-
-            return true
+        resultObj := {
+            name: this.name
+            ,x: this.pos.x
+            ,y: this.pos.y
+            ,type: this.type
+            ,description: this.description
         }
-        catch Error as e 
-        {
-            MsgBox(
-                "오류 발생 위치: " . e.Line . "번째 줄`n" .
-                "발생 함수: " . e.What . "`n" .
-                "메시지: " . e.Message
-            )
 
-            return false
+        resultMap := Map()
+        for key, value in resultObj.OwnProps()
+        {
+            resultMap[key] := value
         }
+
+            
+        return resultMap
     }
 }
