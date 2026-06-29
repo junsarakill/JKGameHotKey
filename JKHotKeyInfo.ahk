@@ -42,7 +42,6 @@ class JKHotKeyInfo
 
     /**
      * #### 클래스 데이터 출력
-     * *
      * @returns {String}
      */
     ToString()
@@ -51,7 +50,10 @@ class JKHotKeyInfo
         , this.name, this.pos.ToString(), this.type, this.description)
     }
 
-    ; 저장용 배열화
+    /**
+     * #### 배열화
+     * @returns {Array}
+     */
     ToArray()
     {
         resultAry := [
@@ -65,6 +67,10 @@ class JKHotKeyInfo
         return resultAry
     }
     
+    /**
+     * #### 맵화 | 저장시 사용
+     * @returns {Map<String, String>}
+     */
     ToMap()
     {
         resultObj := {

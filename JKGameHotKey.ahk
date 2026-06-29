@@ -30,6 +30,7 @@
  * 
  * 없으면 전체 프로세스에 목표 게임 존재 체크
  * -> 없으면 스크립트 종료 {@link AppManager.CloseScript}
+ * -> 변경된 가상키 데이터 저장 {@link AppManager.SaveHKDataToCSV}
  * 
  * 3. 가상키 누르기 | {@link  HotKeyManager.OnKeyEvent}
  * -> 해당 키 좌표 가져오기 | {@link  HotKeyManager.GetKeyPos}
@@ -468,12 +469,12 @@ class AppManager
         ; 데이터 저장
         this.SETTINGS.Save()
         this.SaveHKDataToCSV()
-
-        ; 정상 종료 허가
-        return 0
     }
 
-    
+    /**
+     * #### 가상키 캐시 데이터 csv 저장
+     * @returns {void}
+     */
     static SaveHKDataToCSV()
     {
         for gameName, hkDataMap in this._cachedHKMap
