@@ -2,7 +2,7 @@
 #Include Utility.ahk
 #Include JKHotKey.ahk
 #Include JKSession.ahk
-#Include JKSettings.ahk
+#Include JKHotKeyInfo.ahk
 
 /************************************************************************
  * @description 가상키 담당 관리 클래스
@@ -78,16 +78,14 @@ class HotKeyManager
     ; MARK: 변수 영역
     /**
      * #### 전체 가상키 오브젝트 풀
-     * @type {Map} 
-     * @default null
+     * @type {Map<String, JKHotKey>} 
      * @example hotKeyObjPoolMap[keyName] := oneHotKey
      */
     static hotKeyObjPoolMap := Map()
 
     /**
      * #### 현재 활성화된 가상키 맵
-     * @type {Map} 
-     * @default null
+     * @type {Map<String, JKHotKey>} 
      */
     static curActiveHotKeyMap := Map()
 
@@ -123,26 +121,26 @@ class HotKeyManager
      * #### 가상키 데이터 업데이트
      * *
      * @description 데이터 참조로 받고 신규 가상키 생성
-     * @param {HotKeyInfo} hkInfo - 새 가상키 데이터
+     * @param {Map<String, JKHotKeyInfo} hkData - 새 가상키 데이터
      * @returns {void}
      */
-    static SetupHotKey(hkInfo)
+    static SetupHotKey(hkData)
     {
-        this.CreateAllHotKey(hkInfo)
+        this.CreateAllHotKey(hkData)
     }
 
     /**
      * #### 가상키 생성
      * *
-     * @see JKHotKey|@see HotKeyInfo
-     * @param {HotKeyInfo} hkInfo - 가상키 데이터
+     * @see JKHotKey|@see JKHotKeyInfo
+     * @param {Map<String, JKHotKeyInfo>} hkData - 가상키 데이터
      * @returns {void}
      */
-    static CreateAllHotKey(hkInfo)
+    static CreateAllHotKey(hkData)
     {
         ; 현재 세션
         local newSession := JKSession()
-        for , keyData in hkInfo.hotKeyMap
+        for , keyData in hkData
         {
             ; 유효 검사
             if(!newSession.Valid())
@@ -166,8 +164,8 @@ class HotKeyManager
     /**
      * #### 핫키 데이터 있으면 재사용, 없으면 생성
      * *
-     * @see KeyData
-     * @param {KeyData} keyData - 핫키 데이터
+     * @see JKHotKeyInfo
+     * @param {JKHotKeyInfo} keyData - 핫키 데이터
      * @param {String} inputType - 실제 키 입력 타입 | down, up
      * @returns {bool} - 제작 성공
      */

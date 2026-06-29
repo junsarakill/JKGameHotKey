@@ -42,4 +42,82 @@ class JKUtility extends JKUtilityBase
     {
         super.SetVisibleCursor(value)
     }
+
+    /**
+     * #### 마스터키를 가진 맵 데이터를 CSV 파일로 저장하기
+     * @param {String} csvFileFullPath - 저장할 CSV 전체 경로
+     * @param {Map<String, Map<String, String>>} dataMap - 마스터맵
+     * @param {Array} headers - (선택 사항) 저장할 헤더 순서 지정 | 비지정 시 데이터에서 추출
+     */
+    static SaveSheetData(csvFolderPath, csvFileName, dataMap, headers := "")
+    {
+        ; 데이터가 비어있으면 함수 종료
+        if (dataMap.Count = 0)
+            return
+
+        ; 파일 경로
+        csvPath := this.GetPriorityFilePath(csvFolderPath, csvFileName)
+
+        ; 헤더 정보가 전달되지 않은 경우 맵의 첫 번째 내부 데이터에서 추출
+        if (headers = "")
+        {
+            headers := []
+            ; 첫 번째 요소의 내부 Map을 가져와 헤더 추출
+            for , field in dataMap
+            {
+                for header, in field
+                {
+                    headers.Push(header)
+                }
+                break
+            }
+        }
+
+        csvContent := ""
+        ; 1. 헤더 행 작성
+        for index, header in headers
+        {
+            ; 각 헤더 필드를 CSV 형식에 맞게 이스케이프 처리 후 연결
+            csvContent .= this.FormatCSVField(header) . (index = headers.Length ? "" : ",")
+        }
+        csvContent .= "`r`n"
+
+        ; 2. 데이터 행 작성
+        for , field in dataMap
+        {
+            rowContent := ""
+            for index, header in headers
+            {
+                ; 필드가 존재하면 가져오고 없으면 빈 값 처리
+                value := (field.Has(header) ? field[header] : "")
+                ; CSV 형식에 맞게 이스케이프 처리 후 연결
+                rowContent .= this.FormatCSVField(value) . (index = headers.Length ? "" : ",")
+            }
+            csvContent .= rowContent . "`r`n"
+        }
+
+        ; 3. 파일 쓰기 (UTF-8)
+        ; 파일이 이미 존재할 경우 덮어쓰기 위해 기존 내용을 삭제하거나 새로 생성
+        if (FileExist(csvPath))
+        {
+            FileDelete(csvPath)
+        }
+        FileAppend(csvContent, csvPath, "UTF-8")
+    }
+
+    /**
+     * #### 문자열을 CSV 필드 표준 형식에 맞게 이스케이프 처리
+     * @param {String} fieldText - 원본 텍스트
+     * @returns {String} - 이스케이프 처리된 텍스트
+     */
+    static FormatCSVField(fieldText)
+    {
+        ; 값 내부에 큰따옴표, 쉼표, 줄바꿈이 포함되어 있는지 확인
+        if (InStr(fieldText, '"') || InStr(fieldText, ",") || InStr(fieldText, "`n") || InStr(fieldText, "`r"))
+        {
+            ; 내부의 큰따옴표(")를 두 개("")로 치환하고 전체를 큰따옴표로 감싸기
+            return '"' . StrReplace(fieldText, '"', '""') . '"'
+        }
+        return fieldText
+    }
 }
