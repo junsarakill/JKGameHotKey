@@ -7,6 +7,7 @@
 #Include JKSettings.ahk
 #Include Overlay.ahk
 #Include JKHotKeyInfo.ahk
+#Include JKEditManager.ahk
 
 /************************************************************************
  * @description 스크립트 총괄 클래스
@@ -530,7 +531,6 @@ AppManager.BeginPlay()
 ] & ` up::AppManager.ToggleScript()
 
 
-
 ; MARK: 활성화 입력 영역
 #HotIf AppManager.IsActive
 
@@ -539,6 +539,9 @@ AppManager.BeginPlay()
 
 ; 현재 게임 기본 위치로
 F7::SetGameDefaultPosition.RunSetGameDefaultPosition()
+
+; 편집 모드 토글
+] & F8::JKEditManager.ToggleEditMode()
 
 
 #HotIf 
