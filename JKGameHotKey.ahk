@@ -214,6 +214,8 @@ class AppManager
     {
         ; 오버레이 상태 변경 딜리게이트 바인딩
         this.OnOverlayStateChangedDel.Push(OverlayManager.OnOverlayStateChanged.Bind(OverlayManager))
+        ;@@ 편집모드 진입시 오버레이 활성화 하도록 바인딩
+        
 
         ; 최초 프로그램 시작 대기
         this.WaitStartProgram(this.SCRIPT_START_DELAY_MS)
@@ -423,11 +425,7 @@ class AppManager
         }
 
         ; 상태 변경 딜리게이트 실행
-        for callback in this.OnOverlayStateChangedDel 
-        {
-            if (HasMethod(callback, "Call"))
-                callback(value, overlayContext)
-        }
+        JKUtility.CallMulticastDel(this.OnOverlayStateChangedDel, value, overlayContext)
     }
 
     /**

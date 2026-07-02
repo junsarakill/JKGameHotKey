@@ -44,6 +44,13 @@ class JKEditManager
     ; 대상 창 핸들
     static curTargetHwnd := 0
 
+    /**
+     * #### 편집 모드 진입 딜리게이트
+     * @type {Array<BoundFunc>} 
+     * @default []
+     */
+    static OnEditModeActiveDelegate := []
+
     static __New()
     {
         ; @@ 창 타이틀 바에 생길 gui 미리 생성 및 비활성화
@@ -65,45 +72,50 @@ class JKEditManager
         ; 매니저에게 핫키 정보랑 현재 창 이름 받기
         ; 현재 창 hwnd 기반으로 반투명 클릭 가능 gui 만들기
         this.curTargetHwnd := WinExist("A")
-        JKUtility.Log("gui 활성 시작, hwnd: " this.curTargetHwnd)
+        ; JKUtility.Log("gui 활성 시작, hwnd: " this.curTargetHwnd)
+
+        if(!this.curTargetHwnd)
+            return JKUtility.Log("hwnd 없음")
+
+        ; 편집 모드 활성화 딜리게이트 실행
+        JKUtility.CallMulticastDel(this.OnEditModeActiveDelegate)
         
-        if(this.curTargetHwnd)
-        {
-            ; GUI의 소유권 변경해서 포커스 변경 방지
-            this.editMainGUI.Opt("+Parent" . this.curTargetHwnd)
+        ; GUI의 소유권 변경해서 포커스 변경 방지
+        this.editMainGUI.Opt("+Parent" . this.curTargetHwnd)
 
-            Sleep(-1)
-            
-            ; WS_EX_NOACTIVATE: 클릭해도 활성화되지 않음)
-            this.editMainGUI.Opt("+E0x08000000")
+        Sleep(-1)
+        
+        ; WS_EX_NOACTIVATE: 클릭해도 활성화되지 않음)
+        this.editMainGUI.Opt("+E0x08000000")
 
-            ; 대상 창의 좌표와 크기 구하기
-            WinGetClientPos(, , &targetW, &targetH, this.curTargetHwnd)
-    
-            guiShowOption := Format("x0 y0 w{} h{}",targetW, targetH)
+        ; 대상 창의 좌표와 크기 구하기
+        WinGetClientPos(, , &targetW, &targetH, this.curTargetHwnd)
 
-            JKUtility.Log("show option : " guiShowOption)
-            
-            ; 기존 GUI를 새 위치와 크기로 재배치하여 보여주기
-            this.editMainGUI.Show(guiShowOption)
+        guiShowOption := Format("x0 y0 w{} h{}",targetW, targetH)
 
-            ; 편집 배경을 부모 창의 '가장 자식 레이어 최하단(HWND_BOTTOM)'으로 보냅니다.
-            ; @@ jkhotkey 보단 아래에 있도록 레이어 수정 필요
-            ; HWND_BOTTOM = 1
-            ; SWP_NOSIZE(0x0001) | SWP_NOMOVE(0x0002) = 크기와 위치 유지
-            ; DllCall("SetWindowPos", "Ptr", this.editMainGUI.Hwnd, "Ptr", 1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x0001 | 0x0002)
+        ; JKUtility.Log("show option : " guiShowOption)
+        
+        ; 기존 GUI를 새 위치와 크기로 재배치하여 보여주기
+        this.editMainGUI.Show(guiShowOption)
 
-            DllCall("SetWindowPos", "Ptr", this.editMainGUI.Hwnd, "Ptr", 0, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x0001 | 0x0002 | 0x0010)
-        }
+        ; 편집 배경을 부모 창의 '가장 자식 레이어 최하단(HWND_BOTTOM)'으로 보냅니다.
+        ; @@ jkhotkey 보단 아래에 있도록 레이어 수정 필요
+        ; HWND_BOTTOM = 1
+        ; SWP_NOSIZE(0x0001) | SWP_NOMOVE(0x0002) = 크기와 위치 유지
+        ; DllCall("SetWindowPos", "Ptr", this.editMainGUI.Hwnd, "Ptr", 1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x0001 | 0x0002)
+
+        DllCall("SetWindowPos", "Ptr", this.editMainGUI.Hwnd, "Ptr", 0, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x0001 | 0x0002 | 0x0010)
     }
 
     ; 편집 모드 종료
     static ExitEditMode()
     {
+        ; 편집 gui 초기화
         this.editMainGUI.Hide()
         this.editMainGUI.Opt("-Parent")
         this.editMainGUI.Move(0,0,0,0)
 
+        ; 포커스 되돌리기
         if(this.curTargetHwnd)
             WinActivate(this.curTargetHwnd)
     }
