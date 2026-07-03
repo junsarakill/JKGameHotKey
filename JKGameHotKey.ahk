@@ -155,7 +155,8 @@ class AppManager
         set
         {
             ; 비활성=>비활성 스킵 | 활성=>활성은 유효 프로그램 간 전환때 필요함
-            if(this.SETTINGS.enableOverlay == false && value == false)
+            if(this.SETTINGS.enableOverlay == false 
+            && value == false)
                 return
 
             this.SETTINGS.enableOverlay := value
@@ -214,8 +215,8 @@ class AppManager
     {
         ; 오버레이 상태 변경 딜리게이트 바인딩
         this.OnOverlayStateChangedDel.Push(OverlayManager.OnOverlayStateChanged.Bind(OverlayManager))
-        ;@@ 편집모드 진입시 오버레이 활성화 하도록 바인딩
-        
+        ; @@ 편집모드 진입시 오버레이 활성화 바인딩 | 수정 모드로 활성화할 필요도 있을듯?
+        JKEditManager.OnEditModeActiveDel.Push(() => AppManager.IsOverlayActive := true)
 
         ; 최초 프로그램 시작 대기
         this.WaitStartProgram(this.SCRIPT_START_DELAY_MS)

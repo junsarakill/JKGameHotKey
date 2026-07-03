@@ -49,7 +49,7 @@ class JKEditManager
      * @type {Array<BoundFunc>} 
      * @default []
      */
-    static OnEditModeActiveDelegate := []
+    static OnEditModeActiveDel := []
 
     static __New()
     {
@@ -78,7 +78,7 @@ class JKEditManager
             return JKUtility.Log("hwnd 없음")
 
         ; 편집 모드 활성화 딜리게이트 실행
-        JKUtility.CallMulticastDel(this.OnEditModeActiveDelegate)
+        JKUtility.CallMulticastDel(this.OnEditModeActiveDel)
         
         ; GUI의 소유권 변경해서 포커스 변경 방지
         this.editMainGUI.Opt("+Parent" . this.curTargetHwnd)
