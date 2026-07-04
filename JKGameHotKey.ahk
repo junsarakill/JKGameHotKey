@@ -216,7 +216,8 @@ class AppManager
         ; 오버레이 상태 변경 딜리게이트 바인딩
         this.OnOverlayStateChangedDel.Push(OverlayManager.OnOverlayStateChanged.Bind(OverlayManager))
         ; @@ 편집모드 진입시 오버레이 활성화 바인딩 | 수정 모드로 활성화할 필요도 있을듯?
-        JKEditManager.OnEditModeActiveDel.Push(() => AppManager.IsOverlayActive := true)
+        ; FIXME 딜리게이트 통합했으니 switch 할 함수로 분리
+        JKEditManager.OnEditEventDel.Push(() => AppManager.IsOverlayActive := true)
 
         ; 최초 프로그램 시작 대기
         this.WaitStartProgram(this.SCRIPT_START_DELAY_MS)

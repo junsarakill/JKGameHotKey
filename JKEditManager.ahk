@@ -1,5 +1,6 @@
 #Requires AutoHotkey v2.0
 #Include Utility.ahk
+#Include Overlay.ahk
 /************************************************************************
  * @description 가상키 데이터 편집 중재자
  * @author JKAKK
@@ -45,11 +46,14 @@ class JKEditManager
     static curTargetHwnd := 0
 
     /**
-     * #### 편집 모드 진입 딜리게이트
-     * @type {Array<BoundFunc>} 
+     * #### 편집 이벤트 딜리게이트
+     * @callback EditEventCallback
+     * @param {string} eventType - 이벤트의 종류 (예: 'Begin', 'Save', 'Delete')
+     * @param {...*} params - 이벤트와 함께 전달되는 가변 파라미터들
+     * @type {Array<EditEventCallback>}
      * @default []
      */
-    static OnEditModeActiveDel := []
+    static OnEditEventDel := []
 
     static __New()
     {
@@ -78,7 +82,7 @@ class JKEditManager
             return JKUtility.Log("hwnd 없음")
 
         ; 편집 모드 활성화 딜리게이트 실행
-        JKUtility.CallMulticastDel(this.OnEditModeActiveDel)
+        JKUtility.CallMulticastDel(this.OnEditEventDel, "begin")
         
         ; GUI의 소유권 변경해서 포커스 변경 방지
         this.editMainGUI.Opt("+Parent" . this.curTargetHwnd)
@@ -114,6 +118,8 @@ class JKEditManager
         this.editMainGUI.Hide()
         this.editMainGUI.Opt("-Parent")
         this.editMainGUI.Move(0,0,0,0)
+
+        ; @@ 편집 종료 딜리게이트 실행 | 편집한 가상키 데이터 맵 반환
 
         ; 포커스 되돌리기
         if(this.curTargetHwnd)
