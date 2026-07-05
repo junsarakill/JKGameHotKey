@@ -213,11 +213,11 @@ class AppManager
      */
     static BeginPlay()
     {
-        ; 오버레이 상태 변경 딜리게이트 바인딩
+        ; 오버레이 상태 변경 바인딩
         this.OnOverlayStateChangedDel.Push(OverlayManager.OnOverlayStateChanged.Bind(OverlayManager))
-        ; @@ 편집모드 진입시 오버레이 활성화 바인딩 | 수정 모드로 활성화할 필요도 있을듯?
-        ; FIXME 딜리게이트 통합했으니 switch 할 함수로 분리
-        JKEditManager.OnEditEventDel.Push(() => AppManager.IsOverlayActive := true)
+
+        ; 편집 매니저 이벤트 처리 바인딩
+        JKEditManager.OnEditEventDel.Push(this.EditManagerEventHandler.Bind(AppManager))
 
         ; 최초 프로그램 시작 대기
         this.WaitStartProgram(this.SCRIPT_START_DELAY_MS)
@@ -493,6 +493,28 @@ class AppManager
             ; csv 저장
             JKUtility.SaveSheetData(JKUtility.KEY_DATA_FOLDER, sheetName, hkMasterMap, ["name", "x","y","type","description"])
         }
+    }
+
+    /**
+     * #### 편집 매니저 이벤트 처리
+     * @see JKEditManager.OnEditEventDel
+     * @param {string} eventType - 이벤트의 종류 (예: 'Begin', 'Save')
+     * @param {...*} params - 이벤트와 함께 전달되는 가변 파라미터들
+     * @returns {void}
+     */
+    static EditManagerEventHandler(eventType, params*)
+    {
+        switch(eventType)
+        {
+            case "begin":
+                ; @@ 수정 모드로 활성화할 필요도 있을듯?
+                this.IsOverlayActive := true
+                ; 편집 모드 시작시 대상 가상키 데이터 주입
+                
+            default:
+                JKUtility.Log("비대상 이벤트")
+        }
+
     }
 }
 

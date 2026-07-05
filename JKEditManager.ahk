@@ -48,7 +48,7 @@ class JKEditManager
     /**
      * #### 편집 이벤트 딜리게이트
      * @callback EditEventCallback
-     * @param {string} eventType - 이벤트의 종류 (예: 'Begin', 'Save', 'Delete')
+     * @param {string} eventType - 이벤트의 종류 (예: 'Begin', 'Save')
      * @param {...*} params - 이벤트와 함께 전달되는 가변 파라미터들
      * @type {Array<EditEventCallback>}
      * @default []
