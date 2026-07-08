@@ -45,6 +45,12 @@ class JKEditManager
     ; 대상 창 핸들
     static curTargetHwnd := 0
 
+    ; 대상 게임명
+    static curTargetName := ""
+
+    ; 대상 가상키 데이터 맵
+    static curTargetHKMap := Map()
+
     /**
      * #### 편집 이벤트 딜리게이트
      * @callback EditEventCallback

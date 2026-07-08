@@ -509,7 +509,9 @@ class AppManager
             case "begin":
                 ; @@ 수정 모드로 활성화할 필요도 있을듯?
                 this.IsOverlayActive := true
-                ; 편집 모드 시작시 대상 가상키 데이터 주입
+                ; @@ 편집 모드 시작시 대상 가상키 데이터 주입
+                JKEditManager.curTargetName := this.CurTargetTitle
+                JKEditManager.curTargetHKMap := this._cachedHKMap[this.CurTargetTitle]
                 
             default:
                 JKUtility.Log("비대상 이벤트")
