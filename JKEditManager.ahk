@@ -8,6 +8,8 @@
  * @version 0.0.1
  ***********************************************************************/
 
+; @@ editGui 분리 | 클릭용 txtCtrl, OnSize 이벤트 처리등
+
 
 class JKEditManager
 {
@@ -67,6 +69,8 @@ class JKEditManager
         this.editMainGUI := Gui("-Caption +ToolWindow +AlwaysOnTop")
         this.editMainGUI.BackColor := this.editModeBGColor
         WinSetTransparent(this.editModeBGOpacity, this.editMainGUI)
+
+        ; this.editMainGUI.OnEvent("Click", this.OnClickEvent.Bind(this))
     }
 
 
@@ -131,6 +135,17 @@ class JKEditManager
         if(this.curTargetHwnd)
             WinActivate(this.curTargetHwnd)
     }
+
+    ; 오버레이 추가 이벤트
+    static OnClickEvent(*)
+    {
+        ; 클릭 좌표 가져오기
+        CoordMode("Mouse", "Screen")
+        MouseGetPos(&mouseX, &mouseY)
+
+        JKUtility.Log(Format("x: {} y : {}", mouseX, mouseY))
+    }
+    
 
     
 }
