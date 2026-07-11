@@ -23,6 +23,13 @@ class JKEditGUI
     ; 오버레이 BG 색상 추가
     static editBGColor := "dfdfdf"
 
+    ; 클릭 받을 투명 txt 컨트롤
+    /**
+     * #### 클릭 이벤트용 투명 txt 컨트롤
+     * @type {Gui.Text} 
+     */
+    static blankCtrl := unset
+
     static __New()
     {
         ; @@ 창 타이틀 바에 생길 gui 미리 생성 및 비활성화
@@ -30,8 +37,13 @@ class JKEditGUI
         this.aGUI.BackColor := this.editBGColor
         WinSetTransparent(this.editBGOpacity, this.aGUI)
 
-        ; this.editMainGUI.OnEvent("Click", this.OnClickEvent.Bind(this))
-        ; @@ txtctrl 과 onsize 바인딩으로 크기 동기화 필요
+        ; 클릭 이벤트용 txt 컨트롤
+        this.blankCtrl := this.aGUI.AddText("x0 y0 w0 h0", "")
+
+        ; 크기 동기화 바인드
+        this.aGUI.OnEvent("Size", this.OnSizeSync.Bind(this))
+        ; 클릭 이벤트 바인드
+        this.blankCtrl.OnEvent("Click", this.OnClick.Bind(this))
     }
 
     ; 대상 창에 붙이기
@@ -48,7 +60,7 @@ class JKEditGUI
         guiShowOption := Format("x0 y0 w{} h{}"
                                 , width, height)
 
-        ; JKUtility.Log("show option : " guiShowOption)
+        JKUtility.Log("show option : " guiShowOption)
         
         ; 기존 GUI를 새 위치와 크기로 재배치하여 보여주기
         this.aGUI.Show(guiShowOption)
@@ -69,6 +81,24 @@ class JKEditGUI
         this.aGUI.Opt("-Parent")
         this.aGUI.Move(0,0,0,0)
     }   
+
+    ; 편집 gui 크기 변경시 동기화
+    ; gui, w , h
+    static OnSizeSync(_guiObj, _minMax, newW, newH)
+    {
+        this.blankCtrl.Move(0, 0, newW, newH)
+    }
+
+    ; 클릭 이벤트
+    static OnClick(_guiObj, _clickInfo)
+    {
+        ; 컨트롤의 Hwnd를 기준으로 마우스 위치를 구합니다.
+        MouseGetPos(&ctrlX, &ctrlY, , , 2)
+        
+        ; 결과 출력
+        JKUtility.Log(Format("컨트롤 내부 기준 좌표:`nX: {3}, Y: {4}"
+                    , ctrlX, ctrlY))
+    }
 }
 
 
@@ -93,12 +123,6 @@ class JKEditManager
         }   
     }
 
-    /**
-     * #### 편집 메인 gui
-     * @type {Gui} 
-     */
-    static editMainGUI := JKEditGUI()
-
     ; 대상 창 핸들
     static curTargetHwnd := 0
 
@@ -111,7 +135,7 @@ class JKEditManager
     /**
      * #### 편집 이벤트 딜리게이트
      * @callback EditEventCallback
-     * @param {string} eventType - 이벤트의 종류 (예: 'Begin', 'Save')
+     * @param {'Begin'|'Save'} eventType - 이벤트의 종류 (예: 'Begin', 'Save')
      * @param {...*} params - 이벤트와 함께 전달되는 가변 파라미터들
      * @type {Array<EditEventCallback>}
      * @default []
@@ -149,14 +173,14 @@ class JKEditManager
         WinGetClientPos(, , &targetW, &targetH, this.curTargetHwnd)
 
         ; 대상 창에 gui 붙이기
-        this.editMainGUI.AttachTargetHwnd(this.curTargetHwnd, targetW, targetH)
+        JKEditGUI.AttachTargetHwnd(this.curTargetHwnd, targetW, targetH)
     }
 
     ; 편집 모드 종료
     static ExitEditMode()
     {
         ; 편집 gui 초기화
-        this.editMainGUI.ResetGUI()
+        JKEditGUI.ResetGUI()
 
         ; 저장 요청
         JKUtility.CallMulticastDel(this.OnEditEventDel, "Save", this.curTargetHKMap)

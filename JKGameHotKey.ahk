@@ -498,8 +498,10 @@ class AppManager
     /**
      * #### 편집 매니저 이벤트 처리
      * @see JKEditManager.OnEditEventDel
-     * @param {string} eventType - 이벤트의 종류 (예: 'Begin', 'Save')
+     * @param {'begin'|'save'} eventType - 이벤트의 종류 (예: 'Begin', 'Save')
      * @param {...*} params - 이벤트와 함께 전달되는 가변 파라미터들
+     * @overload EditManagerEventHandler('begin')
+     * @overload EditManagerEventHandler('save', Map<String, String>)
      * @returns {void}
      */
     static EditManagerEventHandler(eventType, params*)
