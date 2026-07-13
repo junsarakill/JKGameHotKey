@@ -499,22 +499,22 @@ class AppManager
      * #### 편집 매니저 이벤트 처리
      * @see JKEditManager.OnEditEventDel
      * @param {'begin'|'save'} eventType - 이벤트의 종류 (예: 'Begin', 'Save')
-     * @param {...*} params - 이벤트와 함께 전달되는 가변 파라미터들
+     * @param {...*} _params - 이벤트와 함께 전달되는 가변 파라미터들
      * @overload EditManagerEventHandler('begin')
-     * @overload EditManagerEventHandler('save', Map<String, String>)
+     * @overload EditManagerEventHandler('save', EditInfo)
      * @returns {void}
      */
-    static EditManagerEventHandler(eventType, params*)
+    static EditManagerEventHandler(eventType, _params*)
     {
         switch(eventType)
         {
             case "begin":
                 ; @@ 수정 모드로 활성화할 필요도 있을듯?
                 this.IsOverlayActive := true
-                ; @@ 편집 모드 시작시 대상 가상키 데이터 주입
-                JKEditManager.curTargetName := this.CurTargetTitle
-                JKEditManager.curTargetHKMap := this._cachedHKMap[this.CurTargetTitle]
-                
+                ; 편집 모드 시작시 대상 가상키 데이터 주입
+                JKEditManager.CurEditInfo := EditInfo(
+                    this.CurTargetTitle
+                    , this._cachedHKMap[this.CurTargetTitle].Clone())
             default:
                 JKUtility.Log("비대상 이벤트")
         }
