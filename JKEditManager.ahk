@@ -30,6 +30,15 @@ class JKEditGUI
     ; 오버레이 BG 색상 추가
     static editBGColor := "dfdfdf"
 
+    /**
+     * #### 편집 gui 이벤트 딜리게이트 배열
+     * 이벤트별 필요 매개 변수
+     * * `('add')`
+     * @see JKEditManager.EditGUIEventHandler
+     * @type {Array<Function>}
+     */
+    static OnEditGUIEventDel := []
+
     ; 생성자
     static __New()
     {
@@ -120,8 +129,11 @@ class JKEditGUI
         
         JKUtility.Log(Format("컨트롤 내부 기준 좌표:`nX: {}, Y: {}", ctrlX, ctrlY))
 
-        ; @@ 여기서 편집 매니저 와의 분기형 딜리게이트를 추가해서 주고 받기 하면 될듯? | 가상키 추가 요청
+        ; 가상키 추가 요청
+        JKUtility.CallMulticastDel(this.OnEditGUIEventDel, 'add')
     }
+
+    
 }
 
 ; 편집용 dto 컨텍스트
@@ -192,8 +204,10 @@ class JKEditManager
 
     static __New()
     {
-
-        ; this.editMainGUI.OnEvent("Click", this.OnClickEvent.Bind(this))
+        ; 편집 gui 이벤트 처리 바인딩
+        SetTimer(() => JKEditGUI.OnEditGUIEventDel.Push(
+            JKEditManager.EditGUIEventHandler.Bind(JKEditManager)
+        ), -1)
     }
 
 
@@ -235,5 +249,25 @@ class JKEditManager
         ; 포커스 되돌리기
         if(this.curTargetHwnd)
             WinActivate(this.curTargetHwnd)
+    }
+
+    /**
+     * #### 편집 GUI 이벤트 처리
+     * @see JKEditManager.OnEditEventDel
+     * @param {'add'} eventType - 이벤트의 종류
+     * @param {...*} _params - 이벤트와 함께 전달되는 가변 파라미터들
+     * @overload EditGUIEventHandler('add')
+     * @returns {void}
+     */
+    static EditGUIEventHandler(eventType, _params*)
+    {
+        switch(eventType)
+        {
+            case "add":
+                ; @@
+            default:
+                JKUtility.Log("비대상 이벤트")
+        }
+
     }
 }
