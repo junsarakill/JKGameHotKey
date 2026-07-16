@@ -130,7 +130,7 @@ class JKEditGUI
         JKUtility.Log(Format("컨트롤 내부 기준 좌표:`nX: {}, Y: {}", ctrlX, ctrlY))
 
         ; 가상키 추가 요청
-        JKUtility.CallMulticastDel(this.OnEditGUIEventDel, 'add')
+        JKUtility.CallMulticastDel(this.OnEditGUIEventDel, 'add', Vector2d(ctrlX, ctrlY))
     }
 
     
@@ -264,7 +264,9 @@ class JKEditManager
         switch(eventType)
         {
             case "add":
-                ; @@
+                /** @type {Vector2d} */
+                clickPos := _params[1]
+                ; @@ 가상키 추가(정확힌 오버레이 생성 및 hk데이터 추가)
             default:
                 JKUtility.Log("비대상 이벤트")
         }
