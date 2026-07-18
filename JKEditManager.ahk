@@ -266,10 +266,23 @@ class JKEditManager
             case "add":
                 /** @type {Vector2d} */
                 clickPos := _params[1]
-                ; @@ 가상키 추가(정확힌 오버레이 생성 및 hk데이터 추가)
+                ; 가상키 추가 시작
+                this.AddNewHK(clickPos)
             default:
                 JKUtility.Log("비대상 이벤트")
         }
 
+    }
+
+    static AddNewHK(clickPos)
+    {
+        ; 1. 신규 가상키 입력 상태로 변경
+        ; 2. 클릭 위치에 입력 받을 오버레이 gui 생성
+        ;         ; 한 줄 위에 주석: 입력창 생성
+        ; KeyEdit := KeyGui.Add("Edit", "w200")
+        ; 3. 대부분의 키는 입력 그대로 입력 받아 text 로 표기
+        ; 4. 백스페이스는 예외로 지우기
+        ; 5. 왼클릭, 엔터 입력은 해당 신규 가상키 저장 확정
+        ; 6. 편집 일반 상태로 변경
     }
 }
