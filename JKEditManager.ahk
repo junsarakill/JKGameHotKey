@@ -168,11 +168,32 @@ class JKEditManager
         {
             this._isEditState := value
 
-            JKUtility.Log("현재 편집 모드 상태 : " value)
+            this.CurEditState := value
+
+            ; JKUtility.Log("현재 편집 모드 상태 : " value)
 
             value ? this.ActiveEditMode() 
                   : this.ExitEditMode()
         }   
+    }
+
+    ; 편집 상태 ENUM
+    static EDIT_STATE := {
+        DISACTIVE : 0
+        , ACTIVE : 1
+        , TYPE : 2
+    }
+
+    static _curEditState := THIS.EDIT_STATE.DISACTIVE
+    ; 현재 편집 상태
+    static CurEditState {
+        get => this._curEditState
+        set 
+        {
+            this._curEditState := value 
+
+            JKUtility.Log("현재 편집 상태 : " JKUtility.EnumToString(this.EDIT_STATE, value))
+        }
     }
 
     ; 대상 창 핸들

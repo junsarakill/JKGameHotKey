@@ -120,4 +120,16 @@ class JKUtility extends JKUtilityBase
         }
         return fieldText
     }
+
+    static EnumToString(enum, num)
+    {
+        for propName, propValue in enum.OwnProps()
+        {
+            if (propValue == num)
+                return propName
+        }
+        
+        ; 매칭되는 숫자가 없을 경우 기본값 반환
+        return "UNKNOWN"
+    }
 }
