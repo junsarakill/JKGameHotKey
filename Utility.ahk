@@ -121,6 +121,12 @@ class JKUtility extends JKUtilityBase
         return fieldText
     }
 
+    /**
+     * #### enum 값을 문자열로 변환
+     * @param {Object} enum - 대상 enum
+     * @param {Number} num - enum 값
+     * @returns {String} - 변환된 문자열
+     */
     static EnumToString(enum, num)
     {
         for propName, propValue in enum.OwnProps()
