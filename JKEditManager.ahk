@@ -298,6 +298,7 @@ class JKEditManager
     static AddNewHK(clickPos)
     {
         ; 1. 신규 가상키 입력 상태로 변경
+        this.CurEditState := this.EDIT_STATE.TYPE
         ; 2. 클릭 위치에 입력 받을 오버레이 gui 생성
         ;         ; 한 줄 위에 주석: 입력창 생성
         ; KeyEdit := KeyGui.Add("Edit", "w200")
