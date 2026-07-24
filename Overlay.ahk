@@ -230,6 +230,18 @@ class OverlayCreateInfo
     }
 }
 
+; MARK: 편집용 오버레이
+class JKEditOverlay extends JKOverlay
+{
+    ; 자식으로 가질 컨트롤
+    ; "Hotkey" | 키 입력 받는 컨트롤
+    ; 클릭하면 자기 삭제하는 버튼 컨트롤
+    
+    ; 포커스 잃으면 임시 저장 요청 이벤트
+    
+
+}
+
 ; MARK: 매니저 클래스
 class OverlayManager
 {
