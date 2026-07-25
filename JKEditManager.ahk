@@ -300,8 +300,8 @@ class JKEditManager
         ; 1. 신규 가상키 입력 상태로 변경
         this.CurEditState := this.EDIT_STATE.TYPE
         ; 2. 클릭 위치에 입력 받을 오버레이 gui 생성
-        ;         ; 한 줄 위에 주석: 입력창 생성
-        ; KeyEdit := KeyGui.Add("Edit", "w200")
-        ; 6. 편집 일반 상태로 변경
+        newOverlay := JKEditOverlay(clickPos)
+        ; 임시 오버레이 목록에 추가
+        ; 6. 편집 일반 상태로 변경 | 굳이 필요 없나? 어차피 가상키 이벤트에서 다 처리되는데
     }
 }
