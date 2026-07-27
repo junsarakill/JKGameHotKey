@@ -126,8 +126,10 @@ class JKEditGUI
     {
         ; 클릭된 좌표 구하기
         MouseGetPos(&ctrlX, &ctrlY, , , 2)
+
+        JKUtility.Log("컨트롤 내부 기준 좌표:`n" . Vector2d(ctrlX,ctrlY).ToString())
         
-        JKUtility.Log(Format("컨트롤 내부 기준 좌표:`nX: {}, Y: {}", ctrlX, ctrlY))
+        ; JKUtility.Log(Format("컨트롤 내부 기준 좌표:`nX: {}, Y: {}", ctrlX, ctrlY))
 
         ; 가상키 추가 요청
         JKUtility.CallMulticastDel(this.OnEditGUIEventDel, 'add', Vector2d(ctrlX, ctrlY))
@@ -199,7 +201,6 @@ class JKEditManager
     ; 대상 창 핸들
     static curTargetHwnd := 0
 
-    ; 대상 창 가상키 데이터 컨텍스트
     static _curEditInfo := EditInfo()
     /**
      * #### 가상키 데이터 컨텍스트
@@ -212,6 +213,9 @@ class JKEditManager
             this._curEditInfo := value
         }
     }
+
+    ; 임시 가상키 데이터 맵
+    static tempHKDataMap := Map()
 
     /**
      * #### 편집 매니저 이벤트 딜리게이트 배열
@@ -256,6 +260,8 @@ class JKEditManager
 
         ; 대상 창에 gui 붙이기
         JKEditGUI.AttachTargetHwnd(this.curTargetHwnd)
+
+        this.tempHKDataMap := Map()
     }
 
     ; 편집 모드 종료
@@ -299,11 +305,14 @@ class JKEditManager
     {
         ; 1. 신규 가상키 입력 상태로 변경
         this.CurEditState := this.EDIT_STATE.TYPE
+        newGuiOption := "-Caption AlwaysOnTop +ToolWindow -Border +Parent" . this.curTargetHwnd
+
+        JKUtility.Log(clickPos.ToString())
         ; 2. 클릭 위치에 입력 받을 오버레이 gui 생성
-        newOverlay := JKEditOverlay(clickPos)
+        ; FIXME 임시 생성 해봤는데 안 보임
+        newOverlay := JKEditOverlay(clickPos, , , newGuiOption, "ac0909")
         ; 포커스 잃음 이벤트에 임시 목록 저장 하도록 바인드
         ; 키 입력 이벤트에 충돌 검사 함수 바인드
-        ; 임시 오버레이 목록에 추가
 
         ; 6. 편집 일반 상태로 변경 | 굳이 필요 없나? 어차피 가상키 이벤트에서 다 처리되는데
     }

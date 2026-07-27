@@ -83,7 +83,6 @@ class JKOverlay
         }
     }
 
-    ; 존재 유효 유무
     /**
      * #### 활성 유무
      * @type {자료형} 
@@ -114,7 +113,7 @@ class JKOverlay
      * @param {Array<String>} guiText - gui텍스트 컨텍스트 | newGuiText := ["Text", "x3 y2 " , keyData.name]
      */
     __New(pos, opacity := 255, width := 12
-        , guiOption := "", guiBGColor := "FFFFFF", guiText := ["","",""]) 
+        , guiOption := "", guiBGColor := "FFFFFF", guiText := ["Text", "x3 y2 " , "?"]) 
     {
         this.aGUI := Gui()
         
@@ -123,6 +122,9 @@ class JKOverlay
 
         ; 나머지 변수는 업데이트 처리
         this.Update(pos, opacity, width, guiOption,guiBGColor, guiText)
+
+        ; 생성 종료
+        this.Awake()
     }
 
     /**
@@ -135,7 +137,7 @@ class JKOverlay
      * @param {Array<String>} guiText - gui텍스트 컨텍스트 | newGuiText := ["Text", "x3 y2 " , keyData.name]
      * @returns {void}
      */
-    Update(pos, opacity := 255, width := 12, guiOption := "",guiBGColor := "FFFFFF", guiText := ["","",""])
+    Update(pos, opacity := 255, width := 12, guiOption := "",guiBGColor := "FFFFFF", guiText := [])
     {
         JKSession.UpdateOrCreateSession(this)
 
@@ -158,6 +160,12 @@ class JKOverlay
         WinSetTransparent(opacity, this.aGUI.Hwnd)
 
         ; JKUtility.Log("gui hwnd: " . this.aGUI.Hwnd . " keyname : " . this.name . " ctrlV : " . this.txtCtrl.Value)
+    }
+
+    ; 객체 생성 후 초기화 | 하위 상속에 필요
+    Awake()
+    {
+
     }
 
     /**
@@ -233,10 +241,27 @@ class OverlayCreateInfo
 ; MARK: 편집용 오버레이
 class JKEditOverlay extends JKOverlay
 {
-    ; 자식으로 가질 컨트롤
     ; "Hotkey" | 키 입력 받는 컨트롤
+    hkControl := ""
+
     ; 클릭하면 자기 삭제하는 버튼 컨트롤
+    btnDelete := ""
     
+    ; 초기화
+    Awake()
+    {
+        super.Awake()
+        
+        ; 하위 컨트롤 생성
+        ; Hotkey 컨트롤 생성
+        this.hkControl := this.aGUI.Add("Hotkey", "w100", "a")
+        this.hkControl.OnEvent("Change", (ctrl, *) => JKUtility.Log(ctrl.Value))
+        
+        ; 삭제 버튼 생성
+        this.btnDelete := this.aGUI.Add("Button", "x+5 w30", "X")
+
+        this.IsVisible := true
+    }    
 
 
     ; 키 입력 이벤트
