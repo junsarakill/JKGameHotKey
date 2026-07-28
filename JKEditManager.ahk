@@ -304,13 +304,14 @@ class JKEditManager
     static AddNewHK(clickPos)
     {
         ; 1. 신규 가상키 입력 상태로 변경
-        this.CurEditState := this.EDIT_STATE.TYPE
+        ; this.CurEditState := this.EDIT_STATE.TYPE
         newGuiOption := "-Caption AlwaysOnTop +ToolWindow -Border +Parent" . this.curTargetHwnd
 
-        JKUtility.Log(clickPos.ToString())
+        ; JKUtility.Log(clickPos.ToString())
         ; 2. 클릭 위치에 입력 받을 오버레이 gui 생성
-        ; FIXME 임시 생성 해봤는데 안 보임
-        newOverlay := JKEditOverlay(clickPos, , , newGuiOption, "ac0909")
+        ; @@ 지역변수로 생성해서 바로 소멸하는 거였음
+        newOverlay := JKEditOverlay(clickPos, 200, , newGuiOption, "ac0909")
+
         ; 포커스 잃음 이벤트에 임시 목록 저장 하도록 바인드
         ; 키 입력 이벤트에 충돌 검사 함수 바인드
 
