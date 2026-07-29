@@ -261,11 +261,15 @@ class JKEditOverlay extends JKOverlay
         this.btnDelete := this.aGUI.Add("Button", "x+5 w30", "X")
 
         this.IsVisible := true
+
+        ; Hotkey 컨트롤에 강제로 포커스 부여
+        this.hkControl.Focus()
     }    
 
 
     ; 키 입력 이벤트
     ; 유효성 검사 요청
+    ; 텍스트 컨트롤 값 변경
 
     ; 자가 삭제 이벤트
     ; 매니저에 삭제 요청
