@@ -309,7 +309,6 @@ class JKEditManager
 
         ; JKUtility.Log(clickPos.ToString())
         ; 2. 클릭 위치에 입력 받을 오버레이 gui 생성
-        ; @@ 지역변수로 생성해서 바로 소멸하는 거였음
         static newOverlay := JKEditOverlay(clickPos, 200, , newGuiOption, "ac0909")
 
         ; 포커스 잃음 이벤트에 임시 목록 저장 하도록 바인드

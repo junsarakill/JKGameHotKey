@@ -242,6 +242,10 @@ class OverlayCreateInfo
 class JKEditOverlay extends JKOverlay
 {
     ; "Hotkey" | 키 입력 받는 컨트롤
+    /**
+     * #### 설명을 입력하세요.
+     * @type {Gui.Hotkey} 
+     */
     hkControl := ""
 
     ; 클릭하면 자기 삭제하는 버튼 컨트롤
@@ -255,8 +259,9 @@ class JKEditOverlay extends JKOverlay
         ; 하위 컨트롤 생성
         ; Hotkey 컨트롤 생성
         this.hkControl := this.aGUI.Add("Hotkey", "w100", "a")
-        this.hkControl.OnEvent("Change", (ctrl, *) => JKUtility.Log(ctrl.Value))
+        this.hkControl.OnEvent("Change", this.OnChange.Bind(this))
         
+        ; FIXME width 정해져서 보이는게 잘리는데 해결필요
         ; 삭제 버튼 생성
         this.btnDelete := this.aGUI.Add("Button", "x+5 w30", "X")
 
@@ -266,8 +271,13 @@ class JKEditOverlay extends JKOverlay
         this.hkControl.Focus()
     }    
 
-
     ; 키 입력 이벤트
+    OnChange(ctrl, *)
+    {
+        ; @@ name 을 프로퍼티 화?
+        this.name := ctrl.Value
+        this.txtCtrl.Value := ctrl.Value
+    }
     ; 유효성 검사 요청
     ; 텍스트 컨트롤 값 변경
 
