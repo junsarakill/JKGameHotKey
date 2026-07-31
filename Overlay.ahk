@@ -29,7 +29,7 @@ class JKOverlay
      * @type {Number} 
      * @default 0
      */
-    width := 0
+    WIDTH => 4 + StrLen(this.name) * 8
 
     /**
      * #### gui 객체
@@ -94,7 +94,7 @@ class JKOverlay
      * #### gui show 옵션
      * @type {String} 
      */
-    GUI_SHOW_OPTION => "NoActivate w" . this.width . " h15 x" . this.pos.x . " y" . this.pos.y
+    GUI_SHOW_OPTION => "NoActivate w" . this.WIDTH . " h15 x" . this.pos.x . " y" . this.pos.y
 
     /**
      * #### 세션
@@ -146,7 +146,7 @@ class JKOverlay
         this.aGUI.Opt(guiOption)
         this.aGUI.BackColor := guiBGColor
         this.pos := pos
-        this.width := width
+        ; this.WIDTH := width
 
         ; 컨트롤 존재 여부 확인 후 처리
         if (!this.HasProp("txtCtrl")) 
@@ -166,6 +166,18 @@ class JKOverlay
     Awake()
     {
 
+    }
+
+    ; 이름 변경
+    Rename(newName)
+    {
+        this.name := newName
+        this.txtCtrl.Value := newName
+        this.txtctrl.Move(,, this.WIDTH)
+        
+        ; 폭 적용
+        if(this.IsVisible)
+            this.aGUI.Show(this.GUI_SHOW_OPTION)
     }
 
     /**
@@ -274,9 +286,7 @@ class JKEditOverlay extends JKOverlay
     ; 키 입력 이벤트
     OnChange(ctrl, *)
     {
-        ; @@ name 을 프로퍼티 화?
-        this.name := ctrl.Value
-        this.txtCtrl.Value := ctrl.Value
+        this.Rename(ctrl.Value)
     }
     ; 유효성 검사 요청
     ; 텍스트 컨트롤 값 변경
