@@ -27,6 +27,8 @@ class JKOverlay
     /**
      * #### 오버레이 폭
      * @type {Number} 
+     * ;@@ width 부분 const 니깐 생성자에서 받을 필요 없음
+     * ;@@ \ 같은 전각 문자도 처리 가능하게 하면 좋을듯 | 아예 gui width 는 Autosize 로 하고 txtctrl의 크기만 조정한다 던가
      * @default 0
      */
     WIDTH => 4 + StrLen(this.name) * 8
