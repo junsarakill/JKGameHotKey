@@ -288,12 +288,18 @@ class JKEditOverlay extends JKOverlay
     ; 키 입력 이벤트
     OnChange(ctrl, *)
     {
+        ; 텍스트 컨트롤 값 변경
         this.Rename(ctrl.Value)
+
+        ; 유효성 검사 요청
+        ; 비유효시 배경색 변경으로 경고
     }
-    ; 유효성 검사 요청
-    ; 텍스트 컨트롤 값 변경
 
     ; 자가 삭제 이벤트
+    OnDelete(ctrl, *)
+    {
+
+    }
     ; 매니저에 삭제 요청
     ; 자기 비활성화
     
