@@ -264,6 +264,9 @@ class JKEditOverlay extends JKOverlay
 
     ; 클릭하면 자기 삭제하는 버튼 컨트롤
     btnDelete := ""
+
+    ; 삭제 요청 딜리게이트
+    OnDeleteDelegate := []
     
     ; 초기화
     Awake()
@@ -298,10 +301,11 @@ class JKEditOverlay extends JKOverlay
     ; 자가 삭제 이벤트
     OnDelete(ctrl, *)
     {
+        ; 매니저에 삭제 요청
+        JKUtility.CallMulticastDel(this.OnDeleteDelegate, this)
+        ; 자기 비활성화
 
     }
-    ; 매니저에 삭제 요청
-    ; 자기 비활성화
     
     ; 비동기 검사 결과 받아서 유효 상태 변경
 
