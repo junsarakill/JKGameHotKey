@@ -308,6 +308,17 @@ class JKEditOverlay extends JKOverlay
     }
     
     ; 비동기 검사 결과 받아서 유효 상태 변경
+    ValidStateChange(value)
+    {
+        if(value)
+        {
+
+        }
+        else
+        {
+            
+        }
+    }
 
     ; 포커스 잃으면 임시 저장 요청 이벤트
     ; 비유효 상태면 저장 불가 처리

@@ -318,13 +318,13 @@ class JKEditManager
     }
 
     ; 충돌 검사 함수
-    static CheckValidHotkey()
+    static CheckValidHotkey(overlayObj)
     {
         ; 신규,수정 키 입력 이벤트때 해당 입력이 기존 목록과 충돌하는지 유효성 확인
         ; 확인 결과 해당 gui 객체에게 주입
         ; this.CurEditInfo.hkDataMap + this.tempHKDataMap
 
-        return false
+        overlayObj.ValidStateChange(false)
     }
 
     ; 저장 이벤트
