@@ -268,6 +268,15 @@ class JKEditOverlay extends JKOverlay
     ; 삭제 요청 딜리게이트
     OnDeleteDelegate := []
     
+    ; 편집 상태 enum
+    static EditState := {
+        NORMAL : 0
+        , INVALID : 1
+    }
+
+    ; 편집 상태
+    curEditState := JKEditOverlay.EditState.NORMAL
+    
     ; 초기화
     Awake()
     {
@@ -308,19 +317,22 @@ class JKEditOverlay extends JKOverlay
     }
     
     ; 비동기 검사 결과 받아서 유효 상태 변경
-    ValidStateChange(value)
+    ChangeEditState(value)
     {
         if(value)
         {
-
+            curEditState := JKEditOverlay.EditState.NORMAL
         }
         else
         {
-            
+            curEditState := JKEditOverlay.EditState.INVALID
         }
     }
 
-    ; 포커스 잃으면 임시 저장 요청 이벤트
+    ; 편집 상태 변경시 ui 처리
+    ; 평상 상태
+    ; 비유효 상태
+
     ; 비유효 상태면 저장 불가 처리
 
 }

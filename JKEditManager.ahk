@@ -311,7 +311,10 @@ class JKEditManager
         ; 2. 클릭 위치에 입력 받을 오버레이 gui 생성
         static newOverlay := JKEditOverlay(clickPos, 200, , newGuiOption, "ac0909")
 
-        ; 포커스 잃음 이벤트에 임시 목록 저장 하도록 바인드
+        ; 임시 목록에 저장
+
+        ; 삭제 이벤트에 임시 목록 제거 함수 바인드
+
         ; 키 입력 이벤트에 충돌 검사 함수 바인드
 
         ; 6. 편집 일반 상태로 변경 | 굳이 필요 없나? 어차피 가상키 이벤트에서 다 처리되는데
