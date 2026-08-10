@@ -300,6 +300,14 @@ class JKEditOverlay extends JKOverlay
     ; 키 입력 이벤트
     OnChange(ctrl, *)
     {
+        ; @@ 제거 버튼 구현 전 임시 처리
+        ; FIXME 제거 이후 두번째 부턴 포커스 처리가 안됨
+        if(ctrl.Value == "")
+        {
+            this.OnDelete("")
+            return 
+        }
+
         ; 텍스트 컨트롤 값 변경
         this.Rename(ctrl.Value)
 
@@ -308,12 +316,10 @@ class JKEditOverlay extends JKOverlay
     }
 
     ; 자가 삭제 이벤트
-    OnDelete(ctrl, *)
+    OnDelete(_ctrl, *)
     {
         ; 매니저에 삭제 요청
         JKUtility.CallMulticastDel(this.OnDeleteDelegate, this)
-        ; 자기 비활성화
-
     }
     
     ; 비동기 검사 결과 받아서 유효 상태 변경

@@ -103,6 +103,9 @@ class HotKeyManager
     ; 핫키 작동 down 상태
     static isPressed := false
 
+    ; 핫키 활성 유무
+    static isActive := true
+
     ; MARK: 함수 영역
 
     /**
@@ -262,6 +265,9 @@ class HotKeyManager
      */
     static OnKeyEvent(inputType, keyName)
     {
+        if(!this.isActive)
+            return
+
         ; 좌표 가져오기 및 입력 체크| 입력 불가시 return
         if(!this.GetKeyPos(&pos2D, keyName))
             return

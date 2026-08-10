@@ -139,6 +139,7 @@ class AppManager
                 return
 
             this._isActive := value
+
             ; 상태 변경
             this.OnActiveChanged()
         }
@@ -509,14 +510,21 @@ class AppManager
         switch(eventType)
         {
             case "begin":
+                ; FIXME 핫키 작동 비활성화 | 클릭 만 막지 핫키가 unbind된게 아닌 문제
+                HotKeyManager.isActive := false
+
                 ; @@ 수정 모드로 활성화할 필요도 있을듯?
                 this.IsOverlayActive := true
+
                 ; 편집 모드 시작시 대상 가상키 데이터 주입
                 JKEditManager.CurEditInfo := EditInfo(
                     this.CurTargetTitle
                     , this._cachedHKMap[this.CurTargetTitle].Clone())
             default:
                 JKUtility.Log("비대상 이벤트")
+                
+                ; @@ 종료시 핫키 활성화
+                HotKeyManager.isActive := true
         }
 
     }

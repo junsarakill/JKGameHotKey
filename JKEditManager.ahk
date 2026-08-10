@@ -119,6 +119,7 @@ class JKEditGUI
 
     /**
      * #### 클릭 이벤트 처리
+     * ;FIXME 편집 오버레이 클릭해도 이벤트 발생하는 버그있음.
      * @description 
      * @returns {void} - 
      */
@@ -127,7 +128,7 @@ class JKEditGUI
         ; 클릭된 좌표 구하기
         MouseGetPos(&ctrlX, &ctrlY, , , 2)
 
-        JKUtility.Log("컨트롤 내부 기준 좌표:`n" . Vector2d(ctrlX,ctrlY).ToString())
+        ; JKUtility.Log("컨트롤 내부 기준 좌표:`n" . Vector2d(ctrlX,ctrlY).ToString())
         
         ; JKUtility.Log(Format("컨트롤 내부 기준 좌표:`nX: {}, Y: {}", ctrlX, ctrlY))
 
@@ -144,7 +145,10 @@ class EditInfo
     ; 게임명
     gameName := ""
     
-    ; 가상키 데이터 맵
+    /**
+     * #### 가상키 데이터 맵
+     * @type {Map<String, JKHotKeyInfo>} 
+     */
     hkDataMap := Map()
 
     __New(gameName := "", hkDataMap := Map()) 
@@ -270,6 +274,20 @@ class JKEditManager
         ; 편집 gui 초기화
         JKEditGUI.ResetGUI()
 
+        ; @@ 임시 목록 비우기 | 이후엔 취소 일때만 지우고 저장요청에서 처리
+        keysToDelete := []
+        for editObj in this.tempHKDataMap
+        {
+            keysToDelete.Push(editObj)
+        }
+
+        ; 주석: 복사된 Key 배열을 순회하며 삭제 수행
+        for editObj in keysToDelete
+        {
+            this.DeleteEditOverlay(editObj)
+        }
+        this.tempHKDataMap := Map()
+
         ; 저장 요청
         JKUtility.CallMulticastDel(this.OnEditEventDel, "save", this.CurEditInfo)
 
@@ -309,11 +327,13 @@ class JKEditManager
 
         ; JKUtility.Log(clickPos.ToString())
         ; 2. 클릭 위치에 입력 받을 오버레이 gui 생성
-        static newOverlay := JKEditOverlay(clickPos, 200, , newGuiOption, "ac0909")
+        newOverlay := JKEditOverlay(clickPos, 200, , newGuiOption, "ac0909")
 
         ; 임시 목록에 저장
+        this.tempHKDataMap[newOverlay] := true
 
         ; 삭제 이벤트에 임시 목록 제거 함수 바인드
+        newOverlay.OnDeleteDelegate.Push(this.DeleteEditOverlay.Bind(this))
 
         ; 키 입력 이벤트에 충돌 검사 함수 바인드
 
@@ -330,6 +350,21 @@ class JKEditManager
         overlayObj.ValidStateChange(false)
     }
 
+    /**
+     * #### 해당 오버레이 제거
+     * ;@@ 기존 오버레이 제거 할 수 있도록 변경해야함
+     * @param {JKEditOverlay} editOverlay - 편집 오버레이
+     * @returns {void}
+     */
+    static DeleteEditOverlay(editOverlay)
+    {
+        if(this.tempHKDataMap.Has(editOverlay))
+        {
+            this.tempHKDataMap.Delete(editOverlay)
+            editOverlay.Destroy()
+        }
+    }
+
     ; 저장 이벤트
     ; 메인 gui 저장 버튼에 이 함수 바인드
     ; 임시 오버레이 목록과 기존 목록 병합
@@ -338,5 +373,8 @@ class JKEditManager
 
     ; 취소 이벤트
     ; 임시 목록 비우기
+
     ; 편집 모드 종료
+
+
 }
