@@ -63,7 +63,7 @@ class JKOverlay
         {
             ; 유효성 검사
             if(!this.isActive)
-                return JKUtility.Log("비활성 상태 오버레이 접근" . this.name)
+                return JKUtility.Log("비활성 상태 오버레이 접근 name: " . this.name)
 
             this._isVisible := value
             if(value)
@@ -211,6 +211,7 @@ class JKOverlay
      */
     Destroy() 
     {
+        ; FIXME 제거 전 하위 컨트롤이 포커스 중 이라면 안전하게 해제하게 해야함
         this.Disactive()
         try this.aGUI.Destroy()
         this.aGUI := unset
@@ -263,6 +264,7 @@ class JKEditOverlay extends JKOverlay
     hkControl := ""
 
     ; 클릭하면 자기 삭제하는 버튼 컨트롤
+    /** @type {Gui.Button} */
     btnDelete := ""
 
     ; 삭제 요청 딜리게이트
@@ -281,27 +283,41 @@ class JKEditOverlay extends JKOverlay
     Awake()
     {
         super.Awake()
+
+        ; 클릭 레이어 상위 지정
+        WinMoveTop(this.aGUI.Hwnd)
+        
         
         ; 하위 컨트롤 생성
         ; Hotkey 컨트롤 생성
-        this.hkControl := this.aGUI.Add("Hotkey", "w100", "a")
+        this.hkControl := this.aGUI.Add("Hotkey", "w100", "?")
         this.hkControl.OnEvent("Change", this.OnChange.Bind(this))
         
         ; FIXME width 정해져서 보이는게 잘리는데 해결필요
         ; 삭제 버튼 생성
+        
         this.btnDelete := this.aGUI.Add("Button", "x+5 w30", "X")
+        this.btnDelete.OnEvent("Click", this.OnDelete.Bind(this))
 
         this.IsVisible := true
 
         ; Hotkey 컨트롤에 강제로 포커스 부여
         this.hkControl.Focus()
+
+        ; @@
+        this.aGUI.Opt("-E0x20")
+        this.aGUI.Show("AutoSize NoActivate")
+
     }    
 
     ; 키 입력 이벤트
     OnChange(ctrl, *)
     {
+        ; THIS.hkControl.Focus()
+
+        JKUtility.Log("입력된 키 : " . ctrl.Value)
         ; @@ 제거 버튼 구현 전 임시 처리
-        ; FIXME 제거 이후 두번째 부턴 포커스 처리가 안됨
+        ; FIXME 제거 이후 부턴 포커스 처리가 안됨
         if(ctrl.Value == "")
         {
             this.OnDelete("")

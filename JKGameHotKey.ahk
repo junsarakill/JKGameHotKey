@@ -556,14 +556,16 @@ AppManager.BeginPlay()
 ; MARK: 입력 영역
 
 ; XXX 디버그용 즉시 체크 시작
-[ & Esc::AppManager.WaitStartProgram()                   
+[ & Esc::AppManager.WaitStartProgram()   
+
+; XXX 디버그용 활성 창 핸들 표시
+; SetTimer(JKUtility.TooltipCurHwnd.Bind(JKUtility), 50)
 
 ; 종료 키
 ] & Esc::AppManager.CloseScript()
 
 ; 스크립트 활성/비활성화 토글
 ] & ` up::AppManager.ToggleScript()
-
 
 ; MARK: 활성화 입력 영역
 #HotIf AppManager.IsActive

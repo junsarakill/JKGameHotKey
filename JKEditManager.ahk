@@ -126,12 +126,16 @@ class JKEditGUI
     static OnClick(_guiObj, _clickInfo)
     {
         ; 클릭된 좌표 구하기
-        MouseGetPos(&ctrlX, &ctrlY, , , 2)
+        MouseGetPos(&ctrlX, &ctrlY, , &ctrlHwnd, 2)
+
+        ; 클릭된게 자신인지 확인
+        if(ctrlHwnd != this.blankCtrl.Hwnd)
+        {
+            return JKUtility.Log("clickHwnd : " . ctrlHwnd . " this : " . this.blankCtrl.Hwnd)
+        }
 
         ; JKUtility.Log("컨트롤 내부 기준 좌표:`n" . Vector2d(ctrlX,ctrlY).ToString())
         
-        ; JKUtility.Log(Format("컨트롤 내부 기준 좌표:`nX: {}, Y: {}", ctrlX, ctrlY))
-
         ; 가상키 추가 요청
         JKUtility.CallMulticastDel(this.OnEditGUIEventDel, 'add', Vector2d(ctrlX, ctrlY))
     }

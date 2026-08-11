@@ -138,4 +138,41 @@ class JKUtility extends JKUtilityBase
         ; 매칭되는 숫자가 없을 경우 기본값 반환
         return "UNKNOWN"
     }
+
+    ; 디버그용 활성 창 핸들 표시
+    static TooltipCurHwnd()
+    {
+        try
+        {
+            ; 1. 탑레벨(최상위 활성) 창의 HWND 및 타이틀 취득
+            topHwnd := WinGetID("A")
+            topTitle := WinGetTitle("A")
+
+            ; 2. 마우스 커서 위치 기준 HWND 및 컨트롤 취득 (마지막 인자 2: HWND 반환)
+            MouseGetPos(&mouseX, &mouseY, &mouseTopHwnd, &mouseCtrlHwnd, 2)
+            
+            ; 마우스 아래 자식 컨트롤의 ClassNN(이름) 취득
+            mouseCtrlName := "None"
+            if (mouseCtrlHwnd)
+            {
+                try mouseCtrlName := ControlGetClassNN(mouseCtrlHwnd)
+            }
+
+            ; 3. 현재 키보드 포커스가 가 있는 자식 컨트롤의 HWND 및 ClassNN 취득
+            focusedCtrlHwnd := ControlGetFocus("A")
+            focusedCtrlName := "None"
+            if (focusedCtrlHwnd)
+            {
+                try focusedCtrlName := ControlGetClassNN(focusedCtrlHwnd)
+            }
+
+            ; 툴팁 출력 (줄바꿈 및 정렬)
+            ToolTip(
+                "Top-Level HWnd   : " . topHwnd . " (" . topTitle . ")`n" .
+                "Mouse Child HWnd : " . (mouseCtrlHwnd ? mouseCtrlHwnd : "None") . " [" . mouseCtrlName . "]`n" .
+                "Focused Ctrl HWnd: " . (focusedCtrlHwnd ? focusedCtrlHwnd : "None") . " [" . focusedCtrlName . "]"
+            )
+        }
+    }
+
 }
