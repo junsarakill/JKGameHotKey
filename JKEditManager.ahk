@@ -119,7 +119,6 @@ class JKEditGUI
 
     /**
      * #### 클릭 이벤트 처리
-     * ;FIXME 편집 오버레이 클릭해도 이벤트 발생하는 버그있음.
      * @description 
      * @returns {void} - 
      */
@@ -131,6 +130,7 @@ class JKEditGUI
         ; 클릭된게 자신인지 확인
         if(ctrlHwnd != this.blankCtrl.Hwnd)
         {
+            ; @@ 디버그 용 로그
             return JKUtility.Log("clickHwnd : " . ctrlHwnd . " this : " . this.blankCtrl.Hwnd)
         }
 
@@ -365,7 +365,8 @@ class JKEditManager
         if(this.tempHKDataMap.Has(editOverlay))
         {
             this.tempHKDataMap.Delete(editOverlay)
-            editOverlay.Destroy()
+            ; @@ 임시 비활성 처리 (제거 시 포커스 잃음 문제 발생)
+            editOverlay.Disactive()
         }
     }
 

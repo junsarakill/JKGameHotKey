@@ -94,6 +94,7 @@ class JKOverlay
 
     /**
      * #### gui show 옵션
+     * ;FIXME width 는 Autosize 로 두고, txtCtrl 의 width를 정하기
      * @type {String} 
      */
     GUI_SHOW_OPTION => "NoActivate w" . this.WIDTH . " h15 x" . this.pos.x . " y" . this.pos.y
@@ -213,7 +214,11 @@ class JKOverlay
     {
         ; FIXME 제거 전 하위 컨트롤이 포커스 중 이라면 안전하게 해제하게 해야함
         this.Disactive()
-        try this.aGUI.Destroy()
+        try 
+        {
+            this.aGUI.Destroy()
+        }
+
         this.aGUI := unset
     }
 
@@ -293,7 +298,6 @@ class JKEditOverlay extends JKOverlay
         this.hkControl := this.aGUI.Add("Hotkey", "w100", "?")
         this.hkControl.OnEvent("Change", this.OnChange.Bind(this))
         
-        ; FIXME width 정해져서 보이는게 잘리는데 해결필요
         ; 삭제 버튼 생성
         
         this.btnDelete := this.aGUI.Add("Button", "x+5 w30", "X")
@@ -304,7 +308,7 @@ class JKEditOverlay extends JKOverlay
         ; Hotkey 컨트롤에 강제로 포커스 부여
         this.hkControl.Focus()
 
-        ; @@
+        ; @@ temp
         this.aGUI.Opt("-E0x20")
         this.aGUI.Show("AutoSize NoActivate")
 
