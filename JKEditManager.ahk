@@ -84,7 +84,7 @@ class JKEditGUI
 
         ; @@ 레이어 관련 기능 추가할때 수정할 곳
         ; 편집 배경을 부모 창의 '가장 자식 레이어 최하단(HWND_BOTTOM)'으로 보냅니다.
-        ; @@ jkhotkey 보단 아래에 있도록 레이어 수정 필요
+        ; 레이어 그리는 순서 1 메인창, 2 편집 gui, 3 가상키 오버레이
         ; HWND_BOTTOM = 1
         ; SWP_NOSIZE(0x0001) | SWP_NOMOVE(0x0002) = 크기와 위치 유지
         ; DllCall("SetWindowPos", "Ptr", this.Hwnd, "Ptr", 1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x0001 | 0x0002)
@@ -131,7 +131,9 @@ class JKEditGUI
         if(ctrlHwnd != this.blankCtrl.Hwnd)
         {
             ; @@ 디버그 용 로그
-            return JKUtility.Log("clickHwnd : " . ctrlHwnd . " this : " . this.blankCtrl.Hwnd)
+            JKUtility.Log("clickHwnd : " . ctrlHwnd . " this : " . this.blankCtrl.Hwnd)
+            
+            return
         }
 
         ; JKUtility.Log("컨트롤 내부 기준 좌표:`n" . Vector2d(ctrlX,ctrlY).ToString())
@@ -356,7 +358,7 @@ class JKEditManager
 
     /**
      * #### 해당 오버레이 제거
-     * ;@@ 기존 오버레이 제거 할 수 있도록 변경해야함
+     * ;@@ 기존 오버레이 제거 기능 추가필요
      * @param {JKEditOverlay} editOverlay - 편집 오버레이
      * @returns {void}
      */
@@ -365,7 +367,7 @@ class JKEditManager
         if(this.tempHKDataMap.Has(editOverlay))
         {
             this.tempHKDataMap.Delete(editOverlay)
-            ; @@ 임시 비활성 처리 (제거 시 포커스 잃음 문제 발생)
+            ; @@ 비활성시 연결고리 없는지 확인 필요
             editOverlay.Disactive()
         }
     }

@@ -208,11 +208,11 @@ class JKOverlay
     /**
      * #### 오버레이 제거
      * @description 오브젝트 풀 추가해서 재사용해야하니 실질 미사용
+     * ;@@ gui가 포커스 가지고 있을때 제거하면 포커스 꼬임 문제
      * @returns {void}
      */
     Destroy() 
     {
-        ; FIXME 제거 전 하위 컨트롤이 포커스 중 이라면 안전하게 해제하게 해야함
         this.Disactive()
         try 
         {
@@ -308,7 +308,7 @@ class JKEditOverlay extends JKOverlay
         ; Hotkey 컨트롤에 강제로 포커스 부여
         this.hkControl.Focus()
 
-        ; @@ temp
+        ; @@ 임시 옵션
         this.aGUI.Opt("-E0x20")
         this.aGUI.Show("AutoSize NoActivate")
 
@@ -321,7 +321,6 @@ class JKEditOverlay extends JKOverlay
 
         JKUtility.Log("입력된 키 : " . ctrl.Value)
         ; @@ 제거 버튼 구현 전 임시 처리
-        ; FIXME 제거 이후 부턴 포커스 처리가 안됨
         if(ctrl.Value == "")
         {
             this.OnDelete("")
