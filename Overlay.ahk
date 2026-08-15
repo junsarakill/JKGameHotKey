@@ -283,6 +283,8 @@ class JKEditOverlay extends JKOverlay
 
     ; 편집 상태
     curEditState := JKEditOverlay.EditState.NORMAL
+
+    ; @@ 편집 상태에 따라 배경색 등 처리
     
     ; 초기화
     Awake()

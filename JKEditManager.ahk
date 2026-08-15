@@ -224,6 +224,8 @@ class JKEditManager
         }
     }
 
+    ; @@ 기존 데이터 + 신규 데이터로 해서 덮어쓰기할 데이터를 저장
+    ; 데이터를 cud 하는 것도 이 변수에 하고, 저장/취소 시점에서 결정
     ; 임시 가상키 데이터 맵
     static tempHKDataMap := Map()
 
