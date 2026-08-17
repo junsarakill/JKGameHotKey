@@ -558,8 +558,19 @@ AppManager.BeginPlay()
 ; XXX 디버그용 즉시 체크 시작
 [ & Esc::AppManager.WaitStartProgram()   
 
-; XXX 디버그용 활성 창 핸들 표시
-SetTimer(JKUtility.TooltipCurHwnd.Bind(JKUtility), 50)
+; 디버그용 활성 창 핸들 표시
+[ & F1::
+{
+    static isRunning := false
+    static timerFn := () => JKUtility.TooltipCurHwnd()
+
+    ; isRunning이 true면 0(해제), false면 50(시작)
+    SetTimer(timerFn, (isRunning := !isRunning) ? 50 : -0)
+
+    if(!isRunning)
+        ToolTip()
+}
+
 
 ; 종료 키
 ] & Esc::AppManager.CloseScript()
