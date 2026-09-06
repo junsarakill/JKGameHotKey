@@ -178,9 +178,9 @@ class JKOverlay
         this.txtCtrl.Value := newName
         this.txtctrl.Move(,, this.WIDTH)
         
-        ; 폭 적용
-        if(this.IsVisible)
-            this.aGUI.Show(this.GUI_SHOW_OPTION)
+        ; @@ 폭 적용
+        ; if(this.IsVisible)
+        ;     this.aGUI.Show(this.GUI_SHOW_OPTION)
     }
 
     /**
@@ -310,7 +310,7 @@ class JKEditOverlay extends JKOverlay
         ; Hotkey 컨트롤에 강제로 포커스 부여
         this.hkControl.Focus()
 
-        ; @@ 임시 옵션
+        ; FIXME 임시 옵션
         this.aGUI.Opt("-E0x20")
         this.aGUI.Show("AutoSize NoActivate")
 
