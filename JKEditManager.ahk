@@ -299,7 +299,7 @@ class JKEditManager
         }
         this.tempHKDataMap := Map()
 
-        ; 저장 요청
+        ; @@ 저장 요청
         JKUtility.CallMulticastDel(this.OnEditEventDel, "save", this.CurEditInfo)
 
         ; 포커스 되돌리기
