@@ -224,12 +224,7 @@ class JKEditManager
         }
     }
 
-    ; @@ 기존 데이터 + 신규 데이터로 해서 덮어쓰기할 데이터를 저장
-    ; 1. 기존 데이터를 여기에 넣기
-    ; 2. 저장 판정일때, 해당 csv 파일에 덮어쓰기
-    ; 3. 기존과 신규 끼리의 충돌 체크
-    ; 데이터를 cud 하는 것도 이 변수에 하고, 저장/취소 시점에서 결정
-    ; 임시 가상키 데이터 맵
+    ;@@ 임시 가상키 데이터 맵 | 위의 클래스 구성 종료시 이쪽 데이터 병합
     static tempHKDataMap := Map()
 
     /**
@@ -276,7 +271,12 @@ class JKEditManager
         ; 대상 창에 gui 붙이기
         JKEditGUI.AttachTargetHwnd(this.curTargetHwnd)
 
+        ; 오버레이 비활성화 요청
+        OverlayManager.ClearOverlay()
+
         this.tempHKDataMap := Map()
+        ; @@ CurEditInfo 기반으로 편집용 오버레이 생성
+
     }
 
     ; 편집 모드 종료

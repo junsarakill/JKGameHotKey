@@ -522,6 +522,7 @@ class AppManager
                     , this._cachedHKMap[this.CurTargetTitle].Clone())
             default:
                 JKUtility.Log("비대상 이벤트")
+                ; @@ 포커스 이벤트?
                 
                 ; @@ 종료시 핫키 활성화
                 HotKeyManager.isActive := true
