@@ -401,7 +401,7 @@ class OverlayManager
      * @param {bool} isActive - 생성 후 즉시 활성 유무
      * @returns {void}
      */
-    static GetOrCreateOverlay(ocInfo, isActive := true)
+    static GetOrCreateOverlay(ocInfo, isActive := true, overlayMap := this.curActiveOverlayMap)
     {
         if(!ocInfo.hwnd || ocInfo.hwnd = 0)
         {
@@ -461,7 +461,8 @@ class OverlayManager
 
             ; 오브젝트 풀, 활성 오버레이 맵에 추가
             this.overlayObjPoolMap[newOverlay.name] := newOverlay
-            this.curActiveOverlayMap[newOverlay.name] := newOverlay
+            ; @@ 이 부분 작동 확인 필요
+            overlayMap[newOverlay.name] := newOverlay
         }
     }
 

@@ -276,6 +276,7 @@ class JKEditManager
 
         this.tempHKDataMap := Map()
         ; @@ CurEditInfo 기반으로 편집용 오버레이 생성
+        ; @@ 오버레이 매니저의 기능을 빌려서 받기?
 
     }
 
