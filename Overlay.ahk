@@ -470,10 +470,10 @@ class OverlayManager
      * #### 오버레이 비활성화
      * @returns {void}
      */
-    static ClearOverlay()
+    static ClearOverlay(overlayMap := this.curActiveOverlayMap)
     {
-        oldMap := this.curActiveOverlayMap
-        this.curActiveOverlayMap := Map()
+        oldMap := overlayMap
+        overlayMap := Map()
 
         for , overlayObj in oldMap
         {

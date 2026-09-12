@@ -224,7 +224,11 @@ class JKEditManager
         }
     }
 
-    ;@@ 임시 가상키 데이터 맵 | 위의 클래스 구성 종료시 이쪽 데이터 병합
+    /**
+     * #### 임시 가상키 데이터
+     * @description name, overlayObj
+     * @type {Map<String, JKEditOverlay>} 
+     */
     static tempHKDataMap := Map()
 
     /**
@@ -274,10 +278,8 @@ class JKEditManager
         ; 오버레이 비활성화 요청
         OverlayManager.ClearOverlay()
 
-        this.tempHKDataMap := Map()
-        ; @@ CurEditInfo 기반으로 편집용 오버레이 생성
-        ; @@ 오버레이 매니저의 기능을 빌려서 받기?
-
+        ; 기존 데이터로 편집용 오버레이 생성
+        this.CreateEditOverlayByEditInfo()
     }
 
     ; 편집 모드 종료
@@ -286,19 +288,8 @@ class JKEditManager
         ; 편집 gui 초기화
         JKEditGUI.ResetGUI()
 
-        ; @@ 임시 목록 비우기 | 이후엔 취소 일때만 지우고 저장요청에서 처리
-        keysToDelete := []
-        for editObj in this.tempHKDataMap
-        {
-            keysToDelete.Push(editObj)
-        }
-
-        ; 주석: 복사된 Key 배열을 순회하며 삭제 수행
-        for editObj in keysToDelete
-        {
-            this.DeleteEditOverlay(editObj)
-        }
-        this.tempHKDataMap := Map()
+        ; 임시 목록 비우기
+        OverlayManager.ClearOverlay(this.tempHKDataMap)
 
         ; @@ 저장 요청
         JKUtility.CallMulticastDel(this.OnEditEventDel, "save", this.CurEditInfo)
@@ -341,8 +332,8 @@ class JKEditManager
         ; 2. 클릭 위치에 입력 받을 오버레이 gui 생성
         newOverlay := JKEditOverlay(clickPos, 200, , newGuiOption, "ac0909")
 
-        ; 임시 목록에 저장
-        this.tempHKDataMap[newOverlay] := true
+        ; @@ 임시 목록에 저장 | 이 부분 충돌 문제 우려
+        this.tempHKDataMap["?"] := newOverlay
 
         ; 삭제 이벤트에 임시 목록 제거 함수 바인드
         newOverlay.OnDeleteDelegate.Push(this.DeleteEditOverlay.Bind(this))
@@ -350,6 +341,69 @@ class JKEditManager
         ; 키 입력 이벤트에 충돌 검사 함수 바인드
 
         ; 6. 편집 일반 상태로 변경 | 굳이 필요 없나? 어차피 가상키 이벤트에서 다 처리되는데
+    }
+
+    /**
+     * #### 가상키 오버레이 생성
+     * ;@@ 임시용 생성 함수 구조 개선 필요
+     * @param {OverlayCreateInfo} ocInfo - 오버레이 새 데이터
+     * @param {bool} isActive - 생성 후 즉시 활성 유무
+     * @returns {void}
+     */
+    static CreateEditOverlayByEditInfo()
+    {
+        if(!this.curTargetHwnd)
+        {
+            JKUtility.Log("hwnd 없음: " . this.curTargetHwnd)
+            return
+        }
+
+        ; for 생성 중 확인할 세션
+        local newSession := JKSession()
+
+        ; 새 오버레이 생성
+        for , keyData in this.CurEditInfo.hkDataMap
+        {
+            ; 세션 유효 검사
+            if(!newSession.Valid())
+            {
+                JKUtility.Log("오버레이 매니저 단에서 중단 session : " . newSession.insSessionNum . ", 현재 최신 세션 : " . JKSession.CurSessionNum)
+
+                ; @@ 테스트 필요
+                OverlayManager.ClearOverlay(this.tempHKDataMap)
+                break
+            }
+
+            ; 최적화용 일시 정지
+            Sleep(-1)
+
+            ; MARK: 오버레이 객체 용 인자 설정
+            winPos := Vector2d.WinGetClientSize(this.curTargetHwnd)
+            
+            newOverlayPos := winPos.Multiply(keyData.pos)
+            newOverlayWidth := 4 + StrLen(keyData.name) * 8
+            newOpacity := 200
+
+            newGuiOption := "-Caption AlwaysOnTop +ToolWindow -Border +Parent" . this.curTargetHwnd
+            newGuiBGColor := "ac0909"
+            ; 사용시 * 뒤에 붙이기
+            newGuiText := ["Text", "x3 y2 " , keyData.name]
+            ; ========
+
+            newOverlay := JKEditOverlay(newOverlayPos, newOpacity, newOverlayWidth, newGuiOption, newGuiBGColor, newGuiText)
+
+            ; 설정에 따라 오버레이 활성화
+            newOverlay.SetVisible(true)
+
+            if(!newOverlay.isActive)
+            {
+                JKUtility.Log("생성 중단된 오버레이 자괴 됨 : " . newOverlay.name . newOverlay.session.insSessionNum)
+                
+                continue
+            }    
+
+            this.tempHKDataMap[newOverlay.name] := newOverlay
+        }
     }
 
     ; 충돌 검사 함수
@@ -364,15 +418,14 @@ class JKEditManager
 
     /**
      * #### 해당 오버레이 제거
-     * ;@@ 기존 오버레이 제거 기능 추가필요
      * @param {JKEditOverlay} editOverlay - 편집 오버레이
      * @returns {void}
      */
     static DeleteEditOverlay(editOverlay)
     {
-        if(this.tempHKDataMap.Has(editOverlay))
+        if(this.tempHKDataMap.Has(editOverlay.name))
         {
-            this.tempHKDataMap.Delete(editOverlay)
+            this.tempHKDataMap.Delete(editOverlay.name)
             ; @@ 비활성시 연결고리 없는지 확인 필요
             editOverlay.Disactive()
         }
