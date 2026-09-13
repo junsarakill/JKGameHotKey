@@ -226,6 +226,7 @@ class JKEditManager
 
     /**
      * #### 임시 가상키 데이터
+     * ;@@ 키 중복 문제 때문에 array 바꿔야할지도
      * @description name, overlayObj
      * @type {Map<String, JKEditOverlay>} 
      */
@@ -393,7 +394,7 @@ class JKEditManager
             newOverlay := JKEditOverlay(newOverlayPos, newOpacity, newOverlayWidth, newGuiOption, newGuiBGColor, newGuiText)
 
             ; 설정에 따라 오버레이 활성화
-            newOverlay.SetVisible(true)
+            ; newOverlay.SetVisible(true)
 
             if(!newOverlay.isActive)
             {
@@ -401,6 +402,9 @@ class JKEditManager
                 
                 continue
             }    
+
+            ;@@  제거함수 바인딩
+
 
             this.tempHKDataMap[newOverlay.name] := newOverlay
         }
