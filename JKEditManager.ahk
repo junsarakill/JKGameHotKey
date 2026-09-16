@@ -226,7 +226,7 @@ class JKEditManager
 
     /**
      * #### 임시 가상키 데이터
-     * ;@@ 키 중복 문제 때문에 array 바꿔야할지도
+     * ;@@ 키 중복 문제 때문에 overlayObj, true 로 변경 예정
      * @description name, overlayObj
      * @type {Map<String, JKEditOverlay>} 
      */
@@ -289,7 +289,7 @@ class JKEditManager
         ; 편집 gui 초기화
         JKEditGUI.ResetGUI()
 
-        ; 임시 목록 비우기
+        ; @@ 임시 목록 비우기
         OverlayManager.ClearOverlay(this.tempHKDataMap)
 
         ; @@ 저장 요청
@@ -340,8 +340,6 @@ class JKEditManager
         newOverlay.OnDeleteDelegate.Push(this.DeleteEditOverlay.Bind(this))
 
         ; 키 입력 이벤트에 충돌 검사 함수 바인드
-
-        ; 6. 편집 일반 상태로 변경 | 굳이 필요 없나? 어차피 가상키 이벤트에서 다 처리되는데
     }
 
     /**
@@ -370,7 +368,6 @@ class JKEditManager
             {
                 JKUtility.Log("오버레이 매니저 단에서 중단 session : " . newSession.insSessionNum . ", 현재 최신 세션 : " . JKSession.CurSessionNum)
 
-                ; @@ 테스트 필요
                 OverlayManager.ClearOverlay(this.tempHKDataMap)
                 break
             }
@@ -393,9 +390,6 @@ class JKEditManager
 
             newOverlay := JKEditOverlay(newOverlayPos, newOpacity, newOverlayWidth, newGuiOption, newGuiBGColor, newGuiText)
 
-            ; 설정에 따라 오버레이 활성화
-            ; newOverlay.SetVisible(true)
-
             if(!newOverlay.isActive)
             {
                 JKUtility.Log("생성 중단된 오버레이 자괴 됨 : " . newOverlay.name . newOverlay.session.insSessionNum)
@@ -405,7 +399,7 @@ class JKEditManager
 
             ;@@  제거함수 바인딩
 
-
+            ; @@
             this.tempHKDataMap[newOverlay.name] := newOverlay
         }
     }
