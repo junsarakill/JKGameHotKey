@@ -323,6 +323,27 @@ class JKEditManager
 
     }
 
+    ; 편집 오버레이 추가 베이스
+    static AddEditOverlay(pos, opacity, guiOption, guiBGColor)
+    {
+        newEditOverlay := JKEditOverlay(pos, opacity, , guiOption, guiBGColor)
+
+        if(!newEditOverlay.isActive)
+        {
+            JKUtility.Log("생성 중단된 오버레이 자괴 됨 : " . newEditOverlay.name . newEditOverlay.session.insSessionNum)
+            
+            return false
+        }    
+
+        ; 제거함수 바인딩
+        newEditOverlay.OnDeleteDelegate.Push(this.DeleteEditOverlay.Bind(this))
+
+        this.tempHKDataMap[newEditOverlay] := true
+
+        return true
+    }
+
+
     static AddNewHK(clickPos)
     {
         ; 1. 신규 가상키 입력 상태로 변경
@@ -376,6 +397,7 @@ class JKEditManager
             Sleep(-1)
 
             ; MARK: 오버레이 객체 용 인자 설정
+            /** @type {Vector2d} */
             winPos := Vector2d.WinGetClientSize(this.curTargetHwnd)
             
             newOverlayPos := winPos.Multiply(keyData.pos)
