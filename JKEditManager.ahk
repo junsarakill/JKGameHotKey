@@ -289,8 +289,8 @@ class JKEditManager
         ; 편집 gui 초기화
         JKEditGUI.ResetGUI()
 
-        ; @@ 임시 목록 비우기
-        OverlayManager.ClearOverlay(this.tempHKDataMap)
+        ; 임시 목록 비우기
+        this.ClearTempHKMap()
 
         ; @@ 저장 요청
         JKUtility.CallMulticastDel(this.OnEditEventDel, "save", this.CurEditInfo)
@@ -389,7 +389,7 @@ class JKEditManager
             {
                 JKUtility.Log("오버레이 매니저 단에서 중단 session : " . newSession.insSessionNum . ", 현재 최신 세션 : " . JKSession.CurSessionNum)
 
-                OverlayManager.ClearOverlay(this.tempHKDataMap)
+                this.ClearTempHKMap()
                 break
             }
 
@@ -443,11 +443,23 @@ class JKEditManager
      */
     static DeleteEditOverlay(editOverlay)
     {
-        if(this.tempHKDataMap.Has(editOverlay.name))
+        if(this.tempHKDataMap.Has(editOverlay))
         {
-            this.tempHKDataMap.Delete(editOverlay.name)
+            this.tempHKDataMap.Delete(editOverlay)
             ; @@ 비활성시 연결고리 없는지 확인 필요
             editOverlay.Disactive()
+        }
+    }
+
+    ; 임시 가상키 맵 비우기
+    static ClearTempHKMap()
+    {
+        oldMap := this.tempHKDataMap
+        this.tempHKDataMap := Map()
+
+        for overlayObj ,  in oldMap
+        {
+            overlayObj.Disactive()
         }
     }
 
